@@ -1,12 +1,12 @@
 module Bot.Handle where
-import           Bot.Data
 import           Bot.NetIO
-import           Control.Monad.State
-import           Control.Monad.Reader
-import           System.Exit
+import           Bot.Types
 import           Control.Applicative
 import           Control.Monad
+import           Control.Monad.Reader
+import           Control.Monad.State
 import           Data.Functor
+import           System.Exit
 import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 
 updateUserList :: ([User]-> [User]) -> BotState -> BotState
@@ -34,8 +34,8 @@ p_hotword hotword = HandleHotword <$> (string hotword *> (many $ noneOf " ")) <*
 -- todo
 {-
 p_mentioning :: [String] -> CharParser () Command
-p_mentioning (x:_) = HandleMentioning <$> 
-    do 
+p_mentioning (x:_) = HandleMentioning <$>
+    do
         manyTill anyChar (try $ string x)
         many anyChar
 -}
@@ -59,7 +59,7 @@ handleHotword :: Command -> Message -> Net ()
 handleHotword HandleHotword {hotHotword = "uptime"} _ = uptime >>= pubmsg
 handleHotword HandleHotword {hotHotword = "quit"} PrivMsg { msgSender = sender} = do
     masters <- asks $ botMasters . botConfig
-    if (userName sender) `elem` masters 
+    if (userName sender) `elem` masters
     then
         write "QUIT" ":Exiting" >> io (exitWith ExitSuccess)
     else

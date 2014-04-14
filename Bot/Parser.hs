@@ -1,5 +1,5 @@
 module Bot.Parser (parseMessage) where
-import           Bot.Data
+import           Bot.Types
 import           Control.Applicative
 import           Control.Monad
 import           Data.Functor

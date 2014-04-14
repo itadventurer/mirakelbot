@@ -1,13 +1,13 @@
-import           Bot.Data
-import Bot.Handle
-import Bot.Parser
-import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
+import           Bot.Handle
 import           Bot.Net
+import           Bot.Parser
+import           Bot.Types
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Network
 import           System.IO
+import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 
 config :: BotConfig
 config = BotConfig {

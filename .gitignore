@@ -1,3 +1,5 @@
 *.sw[po]
 *.hi
+*.o
+bot
 foo.hs

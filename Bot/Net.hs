@@ -1,8 +1,8 @@
 module Bot.Net where
-import           Bot.Data
 import           Bot.Handle
 import           Bot.NetIO
 import           Bot.Parser
+import           Bot.Types
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State

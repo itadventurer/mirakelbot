@@ -1,4 +1,4 @@
-module Bot.Data where
+module Bot.Types where
 
 import           Control.Exception
 import           Control.Monad.Reader
@@ -19,9 +19,9 @@ data BotConfig = BotConfig {
     }
 
 data Bot = Bot {
-      botConfig  :: BotConfig
-    , socket     :: Handle
-    , starttime  :: ClockTime
+      botConfig :: BotConfig
+    , socket    :: Handle
+    , starttime :: ClockTime
     }
 
 data BotState = BotState {
@@ -44,9 +44,9 @@ data Message = Message {
 data Message =    Join User [Channel]
                 | UserQuit User
                 | Ping String
-                | PrivMsg { 
-                      msgSender :: User
-                    , msgChannel :: String 
+                | PrivMsg {
+                      msgSender  :: User
+                    , msgChannel :: String
                     , msgMessage :: String
                     }
                 | Other
@@ -58,7 +58,7 @@ data Command = Pong String
              | Quit
              | HandleHotword {
                    hotHotword :: String
-                 , hotParams :: String
+                 , hotParams  :: String
                  }
              | HandleMentioning String
              deriving Show
