@@ -1,14 +1,19 @@
-import Data.List
-import Network
-import System.IO
-import System.Exit
-import Control.Monad.Reader
-import Control.Exception
-import Text.Printf
-import Text.Regex.Posix
-import Prelude hiding (catch)
-import System.Time
-import Misc
+import           Control.Exception
+import           Control.Monad.Reader
+import           Control.Monad.State
+import           Data.List
+import           Misc
+import           Network
+import           Prelude              hiding (catch)
+import           System.Exit
+import           System.IO
+import           System.Time
+import           Text.Printf
+import           Text.Regex.Posix
+import           Text.ParserCombinators.Parsec (parse)
+import Bot.Data
+import Bot.Parser
+import Bot.Handle
 
 server  = "irc.freenode.net"
 port    = 6667
@@ -17,33 +22,20 @@ nick    = "mirakelbot"
 masters = ["azapps"]
 hotword = "!"
 
-data Bot = Bot { 
-    socket :: Handle, 
-    starttime :: ClockTime,
-    onlineUsers :: [String]}
-data Message = Message { 
-    messageAuthor :: String, 
-    messageReceiver :: String, 
-    messageIsPrivate :: Bool, 
-    messageText :: String 
-    } deriving Show
-
--- The Net monad
-type Net = ReaderT Bot IO
-
-
 main :: IO ()
 main = bracket connect disconnect loop
   where
     disconnect = hClose . socket
-    loop st    =  catch (runReaderT run st) (\(SomeException _) -> return ()) -- *** Control.Exception with base-4
+    initState  = BotState []
+    loop st    =  catch (runReaderT (runStateT run initState) st  >> return ())
+                        (\(SomeException _) -> return ()) -- *** Control.Exception with base-4
 
 connect :: IO Bot
 connect = notify $ do
         t <- getClockTime
         h <- connectTo server (PortNumber (fromIntegral port))
         hSetBuffering h NoBuffering
-        return (Bot h t [])
+        return (Bot h t)
     where
         notify a = bracket_
             (printf "Connecting to %s ... " server >> hFlush stdout)
@@ -61,8 +53,9 @@ listen :: Handle -> Net ()
 listen h = forever $ do
         s <- init `fmap` io (hGetLine h)
         io (putStrLn s)
-        let msg = parseMessage s
-        if ping s then pong s else maybe (return ()) eval msg
+        users <- gets onlineUsers
+        let cmd = parse parseMessage "(unknown)" s
+        either (\_ -> return ()) (evalCommand . interpretMessage) cmd
     where
         forever a   = a >> forever a
 
@@ -70,9 +63,6 @@ listen h = forever $ do
         clean (' ' : (':' : x)) = x
         clean (_:xs) = clean xs
         clean "" = ""
-
-        ping x      = "PING :" `isPrefixOf` x
-        pong x      = write "PONG" (':' : drop 6 x)
 
 -- Send a message out to the server we're connected to
 write :: String -> String -> Net ()
@@ -90,32 +80,32 @@ privmsg receiver message = write "PRIVMSG" (receiver ++ " :" ++ message)
 pubmsg :: String -> Net ()
 pubmsg = privmsg chan
 
-parseMessage :: String -> Maybe Message
-parseMessage msg = if msg=~pattern then Just (Message author receiver isPrivate text) else Nothing
-    where 
-        pattern = ":(.*)!(.*) PRIVMSG (.*) :(.*)$"
-        toArr msg = msg =~ pattern :: [[String]]
-        [[_,author,_,receiver,text]] = toArr msg
-        isPrivate = not ("#" `isPrefixOf` receiver)
+updateUserList :: BotState -> ([User]-> [User]) -> BotState
+updateUserList state@(BotState {onlineUsers=list}) f=state {onlineUsers = f list}
 
 isHot :: String -> String -> Bool
 isHot command text = (hotword ++ command) `isPrefixOf` text
-
+{-
 eval :: Message -> Net ()
 eval msg@(Message {messageText = text, messageAuthor = author})
-    | isHot "quit" text     = if author `elem` masters 
-                            then write "QUIT" ":Exiting" >> io (exitWith ExitSuccess) 
+    -- Hotwords
+    | isHot "quit" text     = if author `elem` masters
+                            then write "QUIT" ":Exiting" >> io (exitWith ExitSuccess)
                             else pubmsg "You are not my master!"
     | isHot "uptime" text   = uptime >>= pubmsg
     | isHot "id" text       = pubmsg (drop (2+ (length hotword)) text)
+    | isHot "users" text    = do users <- gets onlineUsers
+                                 pubmsg $ show users
+    -- Mention Mirakel
     | "irakel" `isInfixOf` text  = handleMentioning msg
+    -- Meta stuff
 eval _                        = return () -- ignore everything else
 
 handleMentioning :: Message -> Net ()
 handleMentioning Message {messageText = text, messageAuthor = author, messageIsPrivate = isPrivate } = do
     privmsg author $ unwords ["Hey",author, "you've mentioned Mirakel!"]
     privmsg author "Can I help you?"
-
+-}
 uptime :: Net String
 uptime = do
     now <- io getClockTime
