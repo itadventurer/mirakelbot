@@ -1,24 +1,23 @@
 module Bot.Data where
 
-import           System.IO
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
+import           Network              (PortID)
+import           System.IO
 import           System.Time
-import           Network (PortNumber)
 
 type Channel = String
 
-data BotConfig = BotConfig {
-      botServer :: String
-    , botPort   :: PortNumber
-    , botChan   :: String
-    , botNick   :: String
-    }
-
 data Bot = Bot {
-    socket    :: Handle,
-    starttime :: ClockTime
+      socket     :: Handle
+    , starttime  :: ClockTime
+    , botServer  :: String
+    , botPort    :: PortID
+    , botChan    :: String
+    , botNick    :: String
+    , botHotword:: String
+    , botMasters:: [String]
     }
 
 data BotState = BotState {
@@ -26,7 +25,7 @@ data BotState = BotState {
     } deriving Show
 
 data User = User {
-      userName :: String
+      userName     :: String
     , userFullName :: String
     } deriving (Show, Eq)
 {-

@@ -1,36 +1,38 @@
 module Bot.Net where
+import           Bot.Data
+import           Bot.Handle
+import           Bot.Parser
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.List
 import           Misc
 import           Network
-import           Prelude              hiding (catch)
+import           Prelude                       hiding (catch)
 import           System.Exit
 import           System.IO
 import           System.Time
-import           Text.Printf
 import           Text.ParserCombinators.Parsec (parse)
-import Bot.Data
-import Bot.Handle
-import Bot.Parser
+import           Text.Printf
 
-connect :: IO Bot
-connect config = notify $ do
+connect :: Bot -> IO Bot
+connect bot = notify $ do
         t <- getClockTime
-        h <- connectTo (asks botServer) (asks botPort)
+        h <- connectTo (botServer bot) (botPort bot)
         hSetBuffering h NoBuffering
-        return (Bot h t)
+        return (bot {socket=h, starttime=t})
     where
         notify a = bracket_
-            (printf "Connecting to %s ... " (botServer config) >> hFlush stdout)
+            (printf "Connecting to %s ... " (botServer bot) >> hFlush stdout)
             (putStrLn "done.")
             a
 run :: Net ()
 run = do
-    write "NICK" $ asks botNick
-    write "USER" ((asks botNick)++" 0 * :MirakelBot")
-    write "JOIN" $ asks botChan
+    nick <- asks botNick
+    chan <- asks botChan
+    write "NICK" $ nick
+    write "USER" (nick ++" 0 * :MirakelBot")
+    write "JOIN" $ chan
     asks socket >>= listen
 
 listen :: Handle -> Net ()
@@ -62,4 +64,5 @@ privmsg :: String -> String -> Net ()
 privmsg receiver message = write "PRIVMSG" (receiver ++ " :" ++ message)
 
 pubmsg :: String -> Net ()
-pubmsg = privmsg $ asks botChan
+pubmsg msg = do chan <- asks botChan
+                privmsg chan msg
