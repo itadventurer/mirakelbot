@@ -1,4 +1,5 @@
 module Bot.Net where
+import           Bot.NetIO
 import           Bot.Data
 import           Bot.Handle
 import           Bot.Parser
@@ -6,7 +7,6 @@ import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.List
-import           Misc
 import           Network
 import           Prelude                       hiding (catch)
 import           System.Exit
@@ -15,21 +15,21 @@ import           System.Time
 import           Text.ParserCombinators.Parsec (parse)
 import           Text.Printf
 
-connect :: Bot -> IO Bot
-connect bot = notify $ do
+connect :: BotConfig -> IO Bot
+connect config = notify $ do
         t <- getClockTime
-        h <- connectTo (botServer bot) (botPort bot)
+        h <- connectTo (botServer config) (botPort config)
         hSetBuffering h NoBuffering
-        return (bot {socket=h, starttime=t})
+        return (Bot {socket=h, starttime=t, botConfig=config})
     where
-        notify a = bracket_
-            (printf "Connecting to %s ... " (botServer bot) >> hFlush stdout)
+        notify = bracket_
+            (printf "Connecting to %s ... " (botServer config) >> hFlush stdout)
             (putStrLn "done.")
-            a
+
 run :: Net ()
 run = do
-    nick <- asks botNick
-    chan <- asks botChan
+    nick <- asks $ botNick . botConfig
+    chan <- asks $ botChan . botConfig
     write "NICK" $ nick
     write "USER" (nick ++" 0 * :MirakelBot")
     write "JOIN" $ chan
@@ -50,19 +50,3 @@ listen h = forever $ do
         clean (_:xs) = clean xs
         clean "" = ""
 
--- Send a message out to the server we're connected to
-write :: String -> String -> Net ()
-write s t = do
-    h <- asks socket
-    io $ hPrintf h "%s %s\r\n" s t
-    io $ printf "> %s %s \n" s t
-
-io :: IO a -> Net a
-io = liftIO
-
-privmsg :: String -> String -> Net ()
-privmsg receiver message = write "PRIVMSG" (receiver ++ " :" ++ message)
-
-pubmsg :: String -> Net ()
-pubmsg msg = do chan <- asks botChan
-                privmsg chan msg

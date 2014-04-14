@@ -9,15 +9,19 @@ import           System.Time
 
 type Channel = String
 
-data Bot = Bot {
-      socket     :: Handle
-    , starttime  :: ClockTime
-    , botServer  :: String
+data BotConfig = BotConfig {
+      botServer  :: String
     , botPort    :: PortID
     , botChan    :: String
     , botNick    :: String
     , botHotword:: String
     , botMasters:: [String]
+    }
+
+data Bot = Bot {
+      botConfig  :: BotConfig
+    , socket     :: Handle
+    , starttime  :: ClockTime
     }
 
 data BotState = BotState {
@@ -44,9 +48,11 @@ data Message =    Join User [Channel]
                 deriving Show
 
 data Command = Pong String
-             | UpdateUser ([User] -> [User])
+             | AddUser User
+             | DelUser User
              | Quit
              | DoNothing
+             deriving Show
 
 -- The Net monad
 type Net = StateT BotState (ReaderT Bot IO)
