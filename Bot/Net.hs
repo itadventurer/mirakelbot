@@ -1,14 +1,13 @@
 module Bot.Net where
-import           Bot.NetIO
 import           Bot.Data
 import           Bot.Handle
+import           Bot.NetIO
 import           Bot.Parser
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Data.List
 import           Network
-import           Prelude                       hiding (catch)
 import           System.Exit
 import           System.IO
 import           System.Time
@@ -39,14 +38,14 @@ listen :: Handle -> Net ()
 listen h = forever $ do
         s <- init `fmap` io (hGetLine h)
         io (putStrLn s)
-        users <- gets onlineUsers
-        let cmd = parse parseMessage "(unknown)" s
-        either (\_ -> return ()) (evalCommand . interpretMessage) cmd
+        let msg = parse parseMessage "(unknown)" s
+        either (\_ -> modify $ updateMessage Nothing) saveMsg msg
+        either printError handleCmd msg
     where
-        forever a   = a >> forever a
-
-        --clean       = drop 1 . dropWhile (/= ':') . drop 1
-        clean (' ' : (':' : x)) = x
-        clean (_:xs) = clean xs
-        clean "" = ""
+        printError = io . putStrLn . show
+        handleCmd = maybe (return ()) evalCommand . interpretMessage
+        saveMsg :: Message -> Net ()
+        saveMsg msg = do
+            modify $ updateMessage $ Just msg
+        updateMessage mmsg state = state {lastMessage = mmsg}
 

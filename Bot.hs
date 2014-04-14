@@ -1,20 +1,15 @@
 import           Bot.Data
-import           Bot.Handle
+import Bot.Handle
+import Bot.Parser
+import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 import           Bot.Net
-import           Bot.Parser
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Data.List
 import           Network
-import           Prelude                       hiding (catch)
-import           System.Exit
 import           System.IO
-import           System.Time
-import           Text.ParserCombinators.Parsec (parse)
-import           Text.Printf
-import           Text.Regex.Posix
 
+config :: BotConfig
 config = BotConfig {
       botServer  = "irc.freenode.net"
     , botPort    = PortNumber 6667
@@ -25,10 +20,10 @@ config = BotConfig {
     }
 
 main :: IO ()
-main = bracket (connect config) disconnect loop
+main = withSocketsDo $ bracket (connect config) disconnect loop
   where
     disconnect = hClose . socket
-    initState  = BotState []
+    initState  = BotState [] Nothing
     loop st    =  catch (runReaderT (runStateT run initState) st  >> return ())
                         (\(SomeException _) -> return ()) -- *** Control.Exception with base-4
 

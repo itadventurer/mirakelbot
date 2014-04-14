@@ -25,7 +25,8 @@ data Bot = Bot {
     }
 
 data BotState = BotState {
-    onlineUsers :: [User]
+      onlineUsers :: [User]
+    , lastMessage :: Maybe Message
     } deriving Show
 
 data User = User {
@@ -43,7 +44,11 @@ data Message = Message {
 data Message =    Join User [Channel]
                 | UserQuit User
                 | Ping String
-                | PrivMsg User String String
+                | PrivMsg { 
+                      msgSender :: User
+                    , msgChannel :: String 
+                    , msgMessage :: String
+                    }
                 | Other
                 deriving Show
 
@@ -51,7 +56,11 @@ data Command = Pong String
              | AddUser User
              | DelUser User
              | Quit
-             | DoNothing
+             | HandleHotword {
+                   hotHotword :: String
+                 , hotParams :: String
+                 }
+             | HandleMentioning String
              deriving Show
 
 -- The Net monad
