@@ -1,5 +1,7 @@
 module Bot.Handle where
 import           Bot.NetIO
+import Data.List
+import Data.Foldable
 import Util.Irc
 import           Bot.Types
 import           Control.Applicative
@@ -12,10 +14,10 @@ updateUserList :: ([User]-> [User]) -> BotState -> BotState
 updateUserList f bstate@(BotState {onlineUsers=list})=bstate {onlineUsers = f list}
 
 p_text :: String -> [String] -> CharParser () Command
-p_text hotword mentionings = (p_hotword hotword) -- <|> (p_mentioning mentionings)
+p_text hotword mentionings = (p_hotword hotword)
 
 p_hotword :: String -> CharParser () Command
-p_hotword hotword = HandleHotword <$> (string hotword *> (many $ noneOf " ")) <*> (many anyChar)
+p_hotword hotword = return HandleHotword
 
 -- todo
 {-
@@ -30,7 +32,7 @@ interpretMessage :: Message -> Maybe Command
 interpretMessage (Ping x) = Just $ Pong (':' : drop 6 x)
 interpretMessage (Join user _) = Just $ AddUser user
 interpretMessage (UserQuit user) = Just $ DelUser user
-interpretMessage (PrivMsg (TextMsg {msgMessage = message})) = either (\_ -> Nothing) Just $ parse (p_text "!" ["mirakel"]) "" message
+interpretMessage (PrivMsg (TextMsg {msgMessage = message})) =Just $ HandleHotword
 interpretMessage Other = Nothing
 
 evalCommand :: Command -> Net ()
@@ -38,20 +40,27 @@ evalCommand (Pong x) = writeRaw "PONG" [x]
 evalCommand (AddUser user) = modify $ updateUserList (user:)
 evalCommand (DelUser user) = modify $ updateUserList $ filter (/= user)
 evalCommand Quit = writeRaw "QUIT" [":Exiting"] >> liftIO (exitWith ExitSuccess)
-evalCommand cmd@(HandleHotword {}) = gets lastMessage >>= maybe (return ()) (handleHotword cmd)
-evalCommand (HandleMentioning _ ) = return ()
+evalCommand HandleHotword = gets lastMessage >>= maybe (return ()) handleHotword
 
-handleHotword :: Command -> TextMsg -> Net ()
-handleHotword HandleHotword {hotHotword = "uptime"} _ = uptime >>= answer
-handleHotword HandleHotword {hotHotword = "quit"} TextMsg { msgSender = sender} = do
-    masters <- asks $ botMasters . botConfig
-    if (userName sender) `elem` masters
-    then
-        writeRaw "QUIT" [":Exiting"] >> liftIO (exitWith ExitSuccess)
-    else
-        answer "You are not my master!"
-handleHotword HandleHotword {hotHotword = "id", hotParams = msg} _ = answer msg
-handleHotword HandleHotword {hotHotword = "users"} _ = do
-    users <- gets onlineUsers
-    answer $ show $ map userName users
-handleHotword _ _ = return ()
+handleHotword :: TextMsg -> Net ()
+handleHotword tmsg@(TextMsg {msgMessage = msg}) = do
+    prefixHotword <- asks $ botHotword . botConfig
+    allHandlers <- asks $ botHandlers . botConfig
+    let handlers = lookupHotword msg prefixHotword allHandlers
+    traverse_ (\(hot, func) -> func tmsg hot) handlers
+    return ()
+
+lookupHotword :: String         -- ^ Message
+              -> String         -- ^ Prefix-Hotword
+              -> [BotHandler]   -- ^ All handler
+              -> [BotHandler]   -- ^ Proper handler
+lookupHotword msg prefix handlers = 
+    case splitAt (length prefix) msg of
+        (p,rest) | p==prefix -> filterFirst isPrefix rest handlers
+        _ -> filterFirst isInfix msg handlers
+    where
+        filterFirst f mmsg = filter (f mmsg .fst)
+        isPrefix mmsg (HotwordPrefix hot) = hot `isPrefixOf` mmsg
+        isPrefix _ _ = False
+        isInfix mmsg (HotwordInfix hot) = hot `isInfixOf` mmsg
+        isInfix _ _ = False

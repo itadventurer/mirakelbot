@@ -24,7 +24,7 @@ cutMsg msg | length msg <= 400 = msg
 writeTo :: String   -- ^ Channel or Nick
         -> String   -- ^ Message
         -> Net ()   -- ^ Result
-writeTo dest msg = writeRaw "PRIVMSG" [dest, cutMsg msg]
+writeTo dest msg = writeRaw "PRIVMSG" [dest, ':' : (cutMsg msg)]
 answer :: String    -- ^ Message
        -> Net ()    -- ^ Result
 answer msg = do

@@ -16,6 +16,7 @@ data BotConfig = BotConfig {
     , botNick    :: String
     , botHotword:: String
     , botMasters:: [String]
+    , botHandlers :: [BotHandler]
     }
 
 data Bot = Bot {
@@ -52,12 +53,15 @@ data Command = Pong String
              | AddUser User
              | DelUser User
              | Quit
-             | HandleHotword {
-                   hotHotword :: String
-                 , hotParams  :: String
-                 }
-             | HandleMentioning String
+             | HandleHotword
              deriving Show
+
+data Hotword = HotwordPrefix String
+             | HotwordInfix String
+             deriving (Show, Eq)
+
+type Hook = (TextMsg -> Hotword -> Net ())
+type BotHandler = (Hotword, Hook)
 
 -- The Net monad
 type Net = StateT BotState (ReaderT Bot IO)
