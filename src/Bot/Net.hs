@@ -1,14 +1,12 @@
 module Bot.Net where
 import           Bot.Handle
-import           Bot.NetIO
 import           Bot.Parser
 import           Bot.Types
+import Util.Irc
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Data.List
 import           Network
-import           System.Exit
 import           System.IO
 import           System.Time
 import           Text.ParserCombinators.Parsec (parse)
@@ -29,23 +27,24 @@ run :: Net ()
 run = do
     nick <- asks $ botNick . botConfig
     chan <- asks $ botChan . botConfig
-    write "NICK" $ nick
-    write "USER" (nick ++" 0 * :MirakelBot")
-    write "JOIN" $ chan
+    writeRaw "NICK" [nick]
+    writeRaw "USER" [nick, "0", "*", ":MirakelBot"]
+    writeRaw "JOIN" [chan]
     asks socket >>= listen
 
 listen :: Handle -> Net ()
 listen h = forever $ do
-        s <- init `fmap` io (hGetLine h)
-        io (putStrLn s)
+        s <- init `fmap` liftIO (hGetLine h)
+        liftIO (putStrLn s)
         let msg = parse parseMessage "(unknown)" s
         either (\_ -> modify $ updateMessage Nothing) saveMsg msg
         either printError handleCmd msg
     where
-        printError = io . putStrLn . show
+        printError = liftIO . putStrLn . show
         handleCmd = maybe (return ()) evalCommand . interpretMessage
         saveMsg :: Message -> Net ()
-        saveMsg msg = do
+        saveMsg (PrivMsg msg) = do
             modify $ updateMessage $ Just msg
-        updateMessage mmsg state = state {lastMessage = mmsg}
+        saveMsg _ = return ()
+        updateMessage mmsg st = st {lastMessage = mmsg}
 

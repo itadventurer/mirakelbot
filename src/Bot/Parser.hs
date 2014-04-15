@@ -1,8 +1,6 @@
 module Bot.Parser (parseMessage) where
 import           Bot.Types
 import           Control.Applicative
-import           Control.Monad
-import           Data.Functor
 import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 
 parseMessage :: CharParser () Message
@@ -19,12 +17,17 @@ p_other =   try p_join
         <|> try p_quit
         <|> try p_privMsg
 
+p_join, p_quit, p_privMsg :: CharParser () Message
 p_join = Join <$> (p_user <* (p_cmd "JOIN")) <*> p_channels
 p_quit = UserQuit <$> (p_user <* (p_cmd "QUIT"))
-p_privMsg = PrivMsg <$> (p_user <* p_cmd "PRIVMSG") <*> p_name <*> p_message
+p_privMsg = PrivMsg <$> p_textMsg
 
+p_textMsg :: CharParser () TextMsg
+p_textMsg = TextMsg <$> (p_user <* p_cmd "PRIVMSG") <*> p_name <*> p_message
+
+p_user :: CharParser () User
 p_user = do
-    char ':'
+    _ <- char ':'
     User <$> (many $ noneOf " !") <*> (char '!' *> (many $ noneOf " "))
 
 p_cmd :: String -> CharParser () String
@@ -39,5 +42,5 @@ p_name = many $ noneOf " "
 p_message :: CharParser () String
 p_message = do
     spaces
-    char ':'
+    _ <- char ':'
     many anyChar

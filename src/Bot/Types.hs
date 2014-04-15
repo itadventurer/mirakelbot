@@ -26,7 +26,7 @@ data Bot = Bot {
 
 data BotState = BotState {
       onlineUsers :: [User]
-    , lastMessage :: Maybe Message
+    , lastMessage :: Maybe TextMsg
     } deriving Show
 
 data User = User {
@@ -34,14 +34,17 @@ data User = User {
     , userFullName :: String
     } deriving (Show, Eq)
 
+data TextMsg = TextMsg {
+      msgSender    :: User
+    , msgDest      :: String
+    , msgMessage   :: String
+    } deriving Show
+
+
 data Message =    Join User [Channel]
                 | UserQuit User
                 | Ping String
-                | PrivMsg {
-                      msgSender  :: User
-                    , msgChannel :: String
-                    , msgMessage :: String
-                    }
+                | PrivMsg TextMsg
                 | Other
                 deriving Show
 

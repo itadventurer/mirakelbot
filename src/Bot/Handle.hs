@@ -1,11 +1,10 @@
 module Bot.Handle where
 import           Bot.NetIO
+import Util.Irc
 import           Bot.Types
 import           Control.Applicative
-import           Control.Monad
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Data.Functor
 import           System.Exit
 import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 
@@ -31,28 +30,28 @@ interpretMessage :: Message -> Maybe Command
 interpretMessage (Ping x) = Just $ Pong (':' : drop 6 x)
 interpretMessage (Join user _) = Just $ AddUser user
 interpretMessage (UserQuit user) = Just $ DelUser user
-interpretMessage msg@(PrivMsg {msgMessage = message}) = either (\_ -> Nothing) Just $ parse (p_text "!" ["mirakel"]) "" message
+interpretMessage (PrivMsg (TextMsg {msgMessage = message})) = either (\_ -> Nothing) Just $ parse (p_text "!" ["mirakel"]) "" message
 interpretMessage Other = Nothing
 
 evalCommand :: Command -> Net ()
-evalCommand (Pong x) = write "PONG" x
+evalCommand (Pong x) = writeRaw "PONG" [x]
 evalCommand (AddUser user) = modify $ updateUserList (user:)
 evalCommand (DelUser user) = modify $ updateUserList $ filter (/= user)
-evalCommand Quit = write "QUIT" ":Exiting" >> io (exitWith ExitSuccess)
+evalCommand Quit = writeRaw "QUIT" [":Exiting"] >> liftIO (exitWith ExitSuccess)
 evalCommand cmd@(HandleHotword {}) = gets lastMessage >>= maybe (return ()) (handleHotword cmd)
 evalCommand (HandleMentioning _ ) = return ()
 
-handleHotword :: Command -> Message -> Net ()
-handleHotword HandleHotword {hotHotword = "uptime"} _ = uptime >>= pubmsg
-handleHotword HandleHotword {hotHotword = "quit"} PrivMsg { msgSender = sender} = do
+handleHotword :: Command -> TextMsg -> Net ()
+handleHotword HandleHotword {hotHotword = "uptime"} _ = uptime >>= answer
+handleHotword HandleHotword {hotHotword = "quit"} TextMsg { msgSender = sender} = do
     masters <- asks $ botMasters . botConfig
     if (userName sender) `elem` masters
     then
-        write "QUIT" ":Exiting" >> io (exitWith ExitSuccess)
+        writeRaw "QUIT" [":Exiting"] >> liftIO (exitWith ExitSuccess)
     else
-        pubmsg "You are not my master!"
-handleHotword HandleHotword {hotHotword = "id", hotParams = msg} _ = pubmsg msg
+        answer "You are not my master!"
+handleHotword HandleHotword {hotHotword = "id", hotParams = msg} _ = answer msg
 handleHotword HandleHotword {hotHotword = "users"} _ = do
     users <- gets onlineUsers
-    pubmsg $ show $ map userName users
+    answer $ show $ map userName users
 handleHotword _ _ = return ()
