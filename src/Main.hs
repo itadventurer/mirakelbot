@@ -11,7 +11,7 @@ import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 
 config :: BotConfig
 config = BotConfig {
-      botServer  = "irc.freenode.net"
+      botServer  = "kornbluth.freenode.net"
     , botPort    = PortNumber 6667
     , botChan    = "#mirakelbot"
     , botNick    = "mirakelbot"

@@ -33,14 +33,7 @@ data User = User {
       userName     :: String
     , userFullName :: String
     } deriving (Show, Eq)
-{-
-data Message = Message {
-      messageAuthor    :: String
-    , messageReceiver  :: String
-    , messageIsPrivate :: Bool
-    , messageText      :: String
-    } deriving Show
--}
+
 data Message =    Join User [Channel]
                 | UserQuit User
                 | Ping String

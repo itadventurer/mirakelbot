@@ -12,19 +12,6 @@ import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 updateUserList :: ([User]-> [User]) -> BotState -> BotState
 updateUserList f bstate@(BotState {onlineUsers=list})=bstate {onlineUsers = f list}
 
-{-isHot :: String -> String -> Bool
-isHot command text = (hotword ++ command) `isPrefixOf` text
-eval :: Message -> Net ()
-eval msg@(Message {messageText = text, messageAuthor = author})
-    -- Hotwords
-    | isHot "users" text    = do users <- gets onlineUsers
-                                 pubmsg $ show users
-handleMentioning :: Message -> Net ()
-handleMentioning Message {messageText = text, messageAuthor = author, messageIsPrivate = isPrivate } = do
-    privmsg author $ unwords ["Hey",author, "you've mentioned Mirakel!"]
-    privmsg author "Can I help you?"
--}
-
 p_text :: String -> [String] -> CharParser () Command
 p_text hotword mentionings = (p_hotword hotword) -- <|> (p_mentioning mentionings)
 

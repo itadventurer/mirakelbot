@@ -6,19 +6,6 @@ It is just a small project to learn haskell. If you want to use it in a producti
 
 It is based on http://www.haskell.org/haskellwiki/Roll_your_own_IRC_bot but is highly modified.
 
-# TODO
-
-* more commands
-* recognize mentioning
-* implement `!users` better
-* Answer in the appropriate channel
-* Use λ instead of !
-* Read config from config file
-* Command line options
-* Fix `ghc -Wall` warnings
-* Refactoring
-* Use github issues :P
-
 # License
 
 Copyright (c) 2014 Anatolij Zelenin
