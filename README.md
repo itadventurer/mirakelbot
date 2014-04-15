@@ -16,7 +16,6 @@ It is based on http://www.haskell.org/haskellwiki/Roll_your_own_IRC_bot but is h
 * Read config from config file
 * Command line options
 * Fix `ghc -Wall` warnings
-* cabal file
 * Refactoring
 * Use github issues :P
 
