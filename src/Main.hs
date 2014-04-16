@@ -9,26 +9,58 @@ import           Network
 import           Control.Arrow
 import           Data.List
 import           System.Time
+import          Options.Applicative
+import Data.Monoid
 
-config :: BotConfig
-config = BotConfig {
-      botServer  = "kornbluth.freenode.net"
-    , botPort    = PortNumber 6667
-    , botChan    = "#mirakelbot"
-    , botNick    = "mirakelbot"
-    , botMasters = ["azapps"]
-    , botHotword = "!"
-    , botHandlers = [
+myHandlers :: [BotHandler]
+myHandlers =[
          (HotwordPrefix "quit", quit)
        , (HotwordInfix "irakel", handleMention)
        , (HotwordPrefix "id", answerId)
        , (HotwordPrefix "uptime", answerUptime)
        , (HotwordPrefix "users", answerUsers)
     ]
-    }
 
 main :: IO ()
-main = runBot config
+main = do
+    -- Parse
+    cfg <- execParser opts
+    runBot cfg
+
+    where
+        opts = info (helper <*> parser) mempty
+        parser = BotConfig
+                    <$> strOption
+                        ( short 's'
+                       <> long "server"
+                       <> metavar "SERVER"
+                       <> help "IRC Server where I should connect to" )
+                    <*> (PortNumber . fromIntegral <$> option
+                        ( short 'p'
+                       <> long "port"
+                       <> metavar "PORT"
+                       <> value 6667
+                       <> help "Port" ))
+                    <*> strOption
+                        ( short 'c'
+                       <> long "chan"
+                       <> metavar "CHANNEL"
+                       <> help "Channel" )
+                    <*> strOption
+                        ( short 'n'
+                       <> long "nick"
+                       <> metavar "NICK"
+                       <> help "Nick name" )
+                    <*> strOption
+                        ( long "hotword"
+                       <> metavar "HOTWORD"
+                       <> help "The prefix hotword" )
+                    <*> many (option
+                        ( short 'm'
+                       <> long "masters"
+                       <> metavar "MASTERS"
+                       <> help "List of master users" ))
+                    <*> pure myHandlers
 
 quit :: Hook
 quit TextMsg { msgSender = sender}  _ = do
