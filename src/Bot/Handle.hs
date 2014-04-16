@@ -1,38 +1,20 @@
 module Bot.Handle where
-import           Bot.NetIO
 import Data.List
 import Data.Foldable
 import Util.Irc
 import           Bot.Types
-import           Control.Applicative
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           System.Exit
-import           Text.ParserCombinators.Parsec hiding (many, optional, (<|>))
 
 updateUserList :: ([User]-> [User]) -> BotState -> BotState
 updateUserList f bstate@(BotState {onlineUsers=list})=bstate {onlineUsers = f list}
-
-p_text :: String -> [String] -> CharParser () Command
-p_text hotword mentionings = (p_hotword hotword)
-
-p_hotword :: String -> CharParser () Command
-p_hotword hotword = return HandleHotword
-
--- todo
-{-
-p_mentioning :: [String] -> CharParser () Command
-p_mentioning (x:_) = HandleMentioning <$>
-    do
-        manyTill anyChar (try $ string x)
-        many anyChar
--}
 
 interpretMessage :: Message -> Maybe Command
 interpretMessage (Ping x) = Just $ Pong (':' : drop 6 x)
 interpretMessage (Join user _) = Just $ AddUser user
 interpretMessage (UserQuit user) = Just $ DelUser user
-interpretMessage (PrivMsg (TextMsg {msgMessage = message})) =Just $ HandleHotword
+interpretMessage (PrivMsg _) =Just $ HandleHotword
 interpretMessage Other = Nothing
 
 evalCommand :: Command -> Net ()
