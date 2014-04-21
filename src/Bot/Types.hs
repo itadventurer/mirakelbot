@@ -58,10 +58,14 @@ data Command = Pong String
 
 data Hotword = HotwordPrefix String
              | HotwordInfix String
-             deriving (Show, Eq)
+             deriving (Show,Eq)
 
 type Hook = (TextMsg -> Hotword -> Net ())
-type BotHandler = (Hotword, Hook)
 
+data BotHandler = BotHandler {
+                  handlerHotword :: Hotword
+                , handlerHook :: Hook
+                , handlerHelp :: String
+                }
 -- The Net monad
 type Net = StateT BotState (ReaderT Bot IO)

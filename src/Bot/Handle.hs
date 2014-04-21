@@ -11,7 +11,7 @@ updateUserList :: ([User]-> [User]) -> BotState -> BotState
 updateUserList f bstate@(BotState {onlineUsers=list})=bstate {onlineUsers = f list}
 
 interpretMessage :: Message -> Maybe Command
-interpretMessage (Ping x) = Just $ Pong (':' : drop 6 x)
+interpretMessage (Ping x) = Just $ Pong (':' : x)
 interpretMessage (Join user _) = Just $ AddUser user
 interpretMessage (UserQuit user) = Just $ DelUser user
 interpretMessage (PrivMsg _) =Just $ HandleHotword
@@ -29,7 +29,7 @@ handleHotword tmsg@(TextMsg {msgMessage = msg}) = do
     prefixHotword <- asks $ botHotword . botConfig
     allHandlers <- asks $ botHandlers . botConfig
     let handlers = lookupHotword msg prefixHotword allHandlers
-    traverse_ (\(hot, func) -> func tmsg hot) handlers
+    traverse_ (\BotHandler {handlerHotword = hot, handlerHook = func} -> func tmsg hot) handlers
     return ()
 
 lookupHotword :: String         -- ^ Message
@@ -41,7 +41,7 @@ lookupHotword msg prefix handlers =
         (p,rest) | p==prefix -> filterFirst isPrefix rest handlers
         _ -> filterFirst isInfix msg handlers
     where
-        filterFirst f mmsg = filter (f mmsg .fst)
+        filterFirst f mmsg = filter (f mmsg . handlerHotword)
         isPrefix mmsg (HotwordPrefix hot) = hot `isPrefixOf` mmsg
         isPrefix _ _ = False
         isInfix mmsg (HotwordInfix hot) = hot `isInfixOf` mmsg

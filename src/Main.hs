@@ -11,14 +11,16 @@ import           Data.List
 import           System.Time
 import          Options.Applicative
 import Data.Monoid
+import Data.Foldable (traverse_)
 
 myHandlers :: [BotHandler]
 myHandlers =[
-         (HotwordPrefix "quit", quit)
-       , (HotwordInfix "irakel", handleMention)
-       , (HotwordPrefix "id", answerId)
-       , (HotwordPrefix "uptime", answerUptime)
-       , (HotwordPrefix "users", answerUsers)
+         BotHandler (HotwordPrefix "quit")     quit           "Force Bot to quit the channel"
+       , BotHandler (HotwordInfix "irakel")    handleMention  "Handle mentioning Mirakel"
+       , BotHandler (HotwordPrefix "id")       answerId       "Print parameter"
+       , BotHandler (HotwordPrefix "uptime")   answerUptime   "Print bot uptime"
+       , BotHandler (HotwordPrefix "users")    answerUsers    "Print online users"
+       , BotHandler (HotwordPrefix "help")     showHelp       "Print help message"
     ]
 
 main :: IO ()
@@ -55,7 +57,7 @@ main = do
                         ( long "hotword"
                        <> metavar "HOTWORD"
                        <> help "The prefix hotword" )
-                    <*> many (option
+                    <*> many (strOption
                         ( short 'm'
                        <> long "masters"
                        <> metavar "MASTERS"
@@ -108,3 +110,16 @@ answerUsers _ _ = do
     users <- gets onlineUsers
     answer $ show $ map userName users
 
+showHelp :: Hook
+showHelp _ hotword = do
+    prefixHotword <- asks $ botHotword . botConfig
+    let helps= map (showHandlerHelp prefixHotword)  myHandlers
+    answer "I am the MirakelBot. You can chat with me here or in a private chat. You can use following commands:"
+    traverse_ answer helps
+    where
+        showHandlerHelp prefixHotword BotHandler {handlerHotword = hot, handlerHelp = help} = 
+            unwords [showHotword prefixHotword $ hot, ":" , help]
+
+        showHotword :: String -> Hotword -> String
+        showHotword hotword (HotwordPrefix a) = hotword ++ a
+        showHotword _ (HotwordInfix a) = unwords ["infix", a]
