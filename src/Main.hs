@@ -15,12 +15,12 @@ import Data.Foldable (traverse_)
 
 myHandlers :: [BotHandler]
 myHandlers =[
-         BotHandler (HotwordPrefix "quit")     quit           "Force Bot to quit the channel"
-       , BotHandler (HotwordInfix "irakel")    handleMention  "Handle mentioning Mirakel"
-       , BotHandler (HotwordPrefix "id")       answerId       "Print parameter"
-       , BotHandler (HotwordPrefix "uptime")   answerUptime   "Print bot uptime"
-       , BotHandler (HotwordPrefix "users")    answerUsers    "Print online users"
-       , BotHandler (HotwordPrefix "help")     showHelp       "Print help message"
+         MessageHandler (HotwordPrefix "quit")     quit           "Force Bot to quit the channel"
+       , MessageHandler (HotwordInfix "irakel")    handleMention  "Handle mentioning Mirakel"
+       , MessageHandler (HotwordPrefix "id")       answerId       "Print parameter"
+       , MessageHandler (HotwordPrefix "uptime")   answerUptime   "Print bot uptime"
+       , MessageHandler (HotwordPrefix "users")    answerUsers    "Print online users"
+       , MessageHandler (HotwordPrefix "help")     showHelp       "Print help message"
     ]
 
 main :: IO ()
@@ -41,7 +41,7 @@ main = do
                         ( short 'p'
                        <> long "port"
                        <> metavar "PORT"
-                       <> value 6667
+                       <> value (6667 :: Int) -- To avoid "Defaulting the following constraint(s) to type ‘Integer’"
                        <> help "Port" ))
                     <*> strOption
                         ( short 'c'
@@ -108,18 +108,20 @@ prettyTimeDiff td =
 answerUsers :: Hook
 answerUsers _ _ = do
     users <- gets onlineUsers
+    writeRaw "NAMES" ["#mirakelbot"]
     answer $ show $ map userName users
 
 showHelp :: Hook
-showHelp _ hotword = do
+showHelp _ _ = do
     prefixHotword <- asks $ botHotword . botConfig
     let helps= map (showHandlerHelp prefixHotword)  myHandlers
     answer "I am the MirakelBot. You can chat with me here or in a private chat. You can use following commands:"
     traverse_ answer helps
     where
-        showHandlerHelp prefixHotword BotHandler {handlerHotword = hot, handlerHelp = help} = 
-            unwords [showHotword prefixHotword $ hot, ":" , help]
+        showHandlerHelp prefixHotword MessageHandler {handlerHotword = hot, handlerHelp = helpMessage} = 
+            unwords [showHotword prefixHotword $ hot, ":" , helpMessage]
+        showHandlerHelp _ _ = ""
 
         showHotword :: String -> Hotword -> String
-        showHotword hotword (HotwordPrefix a) = hotword ++ a
+        showHotword hot (HotwordPrefix a) = hot ++ a
         showHotword _ (HotwordInfix a) = unwords ["infix", a]

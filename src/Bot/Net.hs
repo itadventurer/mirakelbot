@@ -34,9 +34,9 @@ run = do
 
 listen :: Handle -> Net ()
 listen h = forever $ do
-        s <- init `fmap` liftIO (hGetLine h)
-        liftIO (putStrLn s)
-        let msg = parse parseMessage "(unknown)" s
+        rawMessage <- init `fmap` liftIO (hGetLine h)
+        liftIO (putStrLn rawMessage)
+        let msg = parse parseMessage "(unknown)" rawMessage
         either (\_ -> modify $ updateMessage Nothing) saveMsg msg
         either printError handleCmd msg
     where

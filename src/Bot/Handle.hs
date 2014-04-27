@@ -29,8 +29,11 @@ handleHotword tmsg@(TextMsg {msgMessage = msg}) = do
     prefixHotword <- asks $ botHotword . botConfig
     allHandlers <- asks $ botHandlers . botConfig
     let handlers = lookupHotword msg prefixHotword allHandlers
-    traverse_ (\BotHandler {handlerHotword = hot, handlerHook = func} -> func tmsg hot) handlers
+    traverse_ handleHotword' handlers
     return ()
+    where 
+        handleHotword' MessageHandler {handlerHotword = hot, handlerHook = func} =func tmsg hot
+        handleHotword' _ = return ()
 
 lookupHotword :: String         -- ^ Message
               -> String         -- ^ Prefix-Hotword

@@ -1,6 +1,4 @@
 module Bot.Types where
-
-import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Network              (PortID)
@@ -62,10 +60,15 @@ data Hotword = HotwordPrefix String
 
 type Hook = (TextMsg -> Hotword -> Net ())
 
-data BotHandler = BotHandler {
-                  handlerHotword :: Hotword
-                , handlerHook :: Hook
-                , handlerHelp :: String
+data BotHandler = MessageHandler {
+                      handlerHotword :: Hotword
+                    , handlerHook :: Hook
+                    , handlerHelp :: String
+                    }
+                |
+                ServerHandler {
+                      serverHandlerParser :: (String -> Bool)
+                    , serverHandlerHook :: (String -> Net ())
                 }
 -- The Net monad
 type Net = StateT BotState (ReaderT Bot IO)
