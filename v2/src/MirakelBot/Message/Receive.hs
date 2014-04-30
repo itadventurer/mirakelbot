@@ -1,8 +1,7 @@
 module MirakelBot.Message.Receive where
 import MirakelBot.Types
-import Control.Applicative ((<$>),(<*>), (<|>), some,many)
+import Control.Applicative ((<$>),(<*>), (<|>), some)
 import Data.ByteString (ByteString)
-import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.ByteString.Char8 as BC
@@ -17,14 +16,63 @@ isSpace '\r'    = True
 isSpace _       = False
 
 decodeMessage :: ByteString -> Maybe Message
-decodeMessage = undefined
+decodeMessage rawMessage = 
+        let msg =AC.parseOnly parseMessage rawMessage in
+        either (\_ -> Nothing) Just msg
 
+{-
+<command>  ::= <letter> { <letter> } | <number> <number> <number>
+<SPACE>    ::= ' ' { ' ' }
+<params>   ::= <SPACE> [ ':' <trailing> | <middle> <params> ]
+
+<middle>   ::= <Any *non-empty* sequence of octets not including SPACE
+               or NUL or CR or LF, the first of which may not be ':'>
+<trailing> ::= <Any, possibly *empty*, sequence of octets not including
+                 NUL or CR or LF>
+
+<crlf>     ::= CR LF
+
+----
+
+   <channel>    ::= ('#' | '&') <chstring>
+   <servername> ::= <host>
+   <host>       ::= see RFC 952 [DNS:4] for details on allowed hostnames
+   <nick>       ::= <letter> { <letter> | <number> | <special> }
+   <mask>       ::= ('#' | '$') <chstring>
+   <chstring>   ::= <any 8bit code except SPACE, BELL, NUL, CR, LF and
+                     comma (',')>
+
+   Other parameter syntaxes are:
+
+   <user>       ::= <nonwhite> { <nonwhite> }
+   <letter>     ::= 'a' ... 'z' | 'A' ... 'Z'
+   <number>     ::= '0' ... '9'
+   <special>    ::= '-' | '[' | ']' | '\' | '`' | '^' | '{' | '}'
+
+
+ -}
 parseMessage :: A.Parser Message
 parseMessage = do
     prefix  <- A.option Nothing $ Just <$> parsePrefix
     command <- parseCommand
-    params  <- A.manyTill parseParam A.endOfInput
-    return $ ServerMessage prefix command params
+    params  <- parseParams
+    return $ toMsg prefix command params
+    where
+        toMsg :: Maybe Prefix -> Command -> [Param] -> Message
+        toMsg (Just prefix@(NickPrefix {})) PRIVMSG (to:params) = PrivateMessage (getSender prefix) (getTo to) $ T.unwords $ map getParam params
+        toMsg p c px= ServerMessage p c px
+
+        getSender :: Prefix -> To
+        getSender (NickPrefix  {prefixNick = nick}) = ToNick nick
+        getSender _ = error "This could not happen"
+
+        getTo :: Param -> [To]
+        getTo (Param to) = map pTo $ T.split (== ',') to
+
+        pTo to
+            | (T.pack "#") `T.isPrefixOf` to =ToChannel $ Channel to
+            | T.any (=='@') to = ToUser $ User to
+            | otherwise = ToNick $ Nick to
 
 -- |<prefix>   ::= ':' (<servername> | <nick> [ '!' <user> ] [ '@' <host> ])
 parsePrefix :: A.Parser Prefix
@@ -54,13 +102,16 @@ parseCommand = do
     where
         parseNormalCommand = do
             cmd <- some $ AC.satisfy (`elem` ['a'..'z'] ++ ['A'..'Z'])
-            return $ Command $ T.pack cmd
+            return $ case cmd of
+                "PRIVMSG" -> PRIVMSG
+                _ -> Command $ T.pack cmd
         parseNumericCommand = do
             cmd <- AC.take 3
             case readMaybe $ BC.unpack cmd of
                 Nothing -> fail "Invalid command"
                 Just a -> return $ NumericCommand a
 
+parseParams :: A.Parser [Param]
 parseParams = A.manyTill parseParam A.endOfInput
 
 parseParam :: A.Parser Param

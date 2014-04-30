@@ -1,22 +1,17 @@
 module MirakelBot where
 import MirakelBot.Types
-import MirakelBot.Handlers
+import MirakelBot.Net
 import           Control.Exception
 import           Control.Monad.Reader
 import           Control.Monad.State
 import           Network
 import           System.IO
-import           System.Time
-import           Text.ParserCombinators.Parsec (parse)
-import           Text.Printf
-import MirakelBot.Message.Send
 import Control.Lens
 import qualified Data.Text as T
 import Control.Applicative
-import Data.Attoparsec (parseOnly)
-import MirakelBot.Message.Receive
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
+import          Options.Applicative
+import Data.Monoid
+import MirakelBot.InitHandlers
 {-
 16:32:38) Richard: im prinzip ist die MVar nicht das entscheidende
 (16:32:53) Richard: du brauchst auf generellste ebene folgende funktion:
@@ -59,50 +54,49 @@ runBot config = withSocketsDo $ bracket (connect config) disconnect mloop
     initState :: BotState
     initState  = BotState [] Nothing [] [] (HandlerId 0)
     mloop :: BotEnv -> IO ()
-    mloop env    =  catch (runReaderT (runStateT run initState) env  >> return ())
+    mloop env    =  catch (runReaderT (runStateT (run miscHandlers) initState) env  >> return ())
                         (\(SomeException _) -> return ())
 
-connect :: BotConfig -> IO BotEnv
-connect config = notify $ do
-        startTime <- getClockTime
-        h <- connectTo (view botServer config) (view botPort config)
-        hSetBuffering h NoBuffering
-        return (BotEnv config h startTime)
+main :: IO (BotConfig)
+main = do
+    execParser opts
     where
-        notify = bracket_
-            (printf "Connecting to %s ... " (view botServer config) >> hFlush stdout)
-            (putStrLn "done.")
-
-run :: Irc ()
-run = do
-    cfg <- view botConfig
-    let nick = view botNick cfg
-    let chan = view botChan cfg
-    send $ ServerMessage Nothing (Command $ T.pack "NICK") (Param <$> [nick])
-    send $ ServerMessage Nothing (Command $ T.pack "USER") (Param <$> [nick, T.pack "0", T.pack "*", T.pack ":MirakelBot"])
-    send $ ServerMessage Nothing (Command $ T.pack "JOIN") (Param <$> [chan])
-    asks _socket >>= listen
-
-listen :: Handle -> Irc ()
-listen h = forever $ do
-        rawMessage <- B.init `fmap` liftIO (B.hGetLine h)
-        liftIO $ putStrLn $ BC.unpack rawMessage
-        let msg = parseOnly parseMessage rawMessage
-        either handleError handleSucc msg
-    where
-        printError = liftIO . putStrLn . show
-
-        handleCmd = maybe (return ()) evalCommand . interpretMessage
-
-        handleError :: String -> Irc ()
-        handleError err= do
-            lastMessage .= Nothing
-            printError err
-
-        handleSucc :: Message -> Irc ()
-        handleSucc msg = do
-            lastMessage .= Just msg
-            handleCmd msg
-
-interpretMessage = undefined
-evalCommand = undefined
+        opts = info (helper <*> parser) mempty
+        parser = BotConfig
+                    <$> strOption
+                        ( short 's'
+                       <> long "server"
+                       <> metavar "SERVER"
+                       <> help "IRC Server where I should connect to" )
+                    <*> (PortNumber . fromIntegral <$> option
+                        ( short 'p'
+                       <> long "port"
+                       <> metavar "PORT"
+                       <> value (6667 :: Int) -- To avoid "Defaulting the following constraint(s) to type ‘Integer’"
+                       <> help "Port" ))
+                    <*> (T.pack <$> strOption
+                        ( short 'c'
+                       <> long "chan"
+                       <> metavar "CHANNEL"
+                       <> help "Channel" ))
+                    <*> (T.pack <$> strOption
+                        ( short 'r'
+                       <> long "real"
+                       <> metavar "REAL"
+                       <> help "Real name" ))
+                    <*> (T.pack <$> strOption
+                        ( short 'n'
+                       <> long "nick"
+                       <> metavar "NICK"
+                       <> help "Nick name" ))
+                    <*> (T.pack <$> strOption
+                        ( long "hotword"
+                       <> metavar "HOTWORD"
+                       <> help "The prefix hotword" ))
+                    {-
+                    <*> many (strOption
+                        ( short 'm'
+                       <> long "masters"
+                       <> metavar "MASTERS"
+                       <> help "List of master users" ))
+                    <*> pure []-}
