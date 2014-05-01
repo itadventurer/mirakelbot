@@ -13,19 +13,19 @@ send message = do
 
 answer :: T.Text -> Handler
 answer txt msg=do
-    let to = getDest msg
-    sendText (view privateMessage msg) [to]
+    let dest = getDest msg
+    sendText txt [dest]
 
 sendText :: T.Text -> [To] -> HandlerResult
-sendText txt to = do
-    let msg = PrivateMessage Nothing to txt
+sendText txt dest = do
+    let msg = PrivateMessage Nothing dest txt
     send' msg
     
 
 getDest :: Message -> To
-getDest msg@(PrivateMessage {_privateSender = Just sndr, _privateDestination = (to:_)}) = 
-    case to of
-        ToChannel _ -> to
+getDest (PrivateMessage {_privateSender = Just sndr, _privateDestination = (dest:_)}) = 
+    case dest of
+        ToChannel _ -> dest
         ToUser _ -> sndr
         _ -> error "Wrong destination"
 getDest _ = error "Wrong destination"

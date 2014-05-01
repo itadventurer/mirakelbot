@@ -5,6 +5,8 @@ import Control.Lens
 import qualified Data.Text as T
 import Data.Text (Text)
 import Data.Monoid
+import Data.Char
+import Data.Functor
 import Data.Foldable
 import Control.Monad.Reader
 
@@ -23,19 +25,14 @@ registerHandler h = do
     botHandlers %= ((i,h) :)
     return i
 
-splitMsgAt :: Int -> Message -> Maybe (Text,Text)
-splitMsgAt at (PrivateMessage {_privateMessage = txt}) = Just $ T.splitAt at txt
-splitMsgAt _ _ = Nothing
-
-
 -- | Register a new Handler which is called when the user calls a bang command
 registerBangHandler :: Text -> (Text -> Handler) -> Irc (HandlerId)
 registerBangHandler rawcmd h = do
     cfg <- view botConfig
     let hotword = view botHotword cfg
     let cmd = hotword <> rawcmd
-    let newHandler = msg -> case splitMsgAt (T.length cmd) msg of
-                        Just (p,params) | p== cmd -> h params msg
+    let newHandler msg = case T.splitAt (T.length cmd) <$> msg ^? privateMessage of
+                        Just (p,params) | p== cmd && (T.null params || isSpace (T.head params)) -> h (T.strip params) msg
                         _ -> return ()
     i <- generateHandlerId
     botHandlers %= ((i,newHandler) :)
