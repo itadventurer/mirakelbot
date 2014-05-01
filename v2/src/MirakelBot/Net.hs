@@ -1,21 +1,21 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Net where
-import MirakelBot.Types
-import MirakelBot.Handlers
+import           Control.Applicative
 import           Control.Exception
+import           Control.Lens
 import           Control.Monad.Reader
+import           Data.Attoparsec            (parseOnly)
+import qualified Data.ByteString            as B
+import qualified Data.ByteString.Char8      as BC
+import           Data.Monoid
+import           MirakelBot.Handlers
+import           MirakelBot.Message.Receive
+import           MirakelBot.Message.Send
+import           MirakelBot.Types
 import           Network
 import           System.IO
 import           System.Time
 import           Text.Printf
-import MirakelBot.Message.Send
-import Control.Lens
-import qualified Data.Text as T
-import Control.Applicative
-import Data.Attoparsec (parseOnly)
-import MirakelBot.Message.Receive
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Char8 as BC
-import Data.Monoid
 connect :: BotConfig -> IO BotEnv
 connect config = notify $ do
         startTime <- getClockTime
@@ -34,9 +34,9 @@ run handlers = do
     let nick = view botNick cfg
     let chan = view botChan cfg
     let real = view botRealName cfg
-    send $ ServerMessage Nothing (Command $ T.pack "NICK") (Param <$> [nick])
-    send $ ServerMessage Nothing (Command $ T.pack "USER") (Param <$> [nick, T.pack "0", T.pack "*", (T.pack ":") <> real])
-    send $ ServerMessage Nothing (Command $ T.pack "JOIN") (Param <$> [chan])
+    send $ ServerMessage Nothing (Command "NICK") (Param <$> [nick])
+    send $ ServerMessage Nothing (Command "USER") (Param <$> [nick, "0", "*", ":" <> real])
+    send $ ServerMessage Nothing (Command "JOIN") (Param <$> [chan])
     asks _socket >>= listen
 
 listen :: Handle -> Irc ()
@@ -46,7 +46,7 @@ listen h = forever $ do
         let msg = parseOnly parseMessage rawMessage
         either handleError handleSucc msg
     where
-        printError = liftIO . putStrLn . show
+        printError = liftIO . print
 
         handleError :: String -> Irc ()
         handleError err= do

@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers where
-import MirakelBot.Types
-import Control.Lens
-import qualified Data.Text as T
-import Data.Text (Text)
-import Data.Monoid
-import Data.Char
-import Data.Functor
-import Data.Foldable
-import Control.Monad.Reader
+import           Control.Lens
+import           Control.Monad.Reader
+import           Data.Char
+import           Data.Foldable
+import           Data.Functor
+import           Data.Monoid
+import           Data.Text            (Text)
+import qualified Data.Text            as T
+import           MirakelBot.Types
 
 -- | add one to the HandlerId
 succHandlerId :: HandlerId -> HandlerId
@@ -19,14 +19,14 @@ generateHandlerId :: Irc HandlerId
 generateHandlerId = lastHandlerId <%= succHandlerId
 
 -- | Add a Handler to the Handler list
-registerHandler :: Handler -> Irc (HandlerId)
+registerHandler :: Handler -> Irc HandlerId
 registerHandler h = do
     i <- generateHandlerId
     botHandlers %= ((i,h) :)
     return i
 
 -- | Register a new Handler which is called when the user calls a bang command
-registerBangHandler :: Text -> (Text -> Handler) -> Irc (HandlerId)
+registerBangHandler :: Text -> (Text -> Handler) -> Irc HandlerId
 registerBangHandler rawcmd h = do
     cfg <- view botConfig
     let hotword = view botHotword cfg
@@ -42,7 +42,7 @@ registerBangHandler rawcmd h = do
 unregisterHandler :: HandlerId -> Irc ()
 unregisterHandler hid = botHandlers %= filter (\ (i,_) -> i /= hid)
 
--- | 
+-- |
 handleMessage :: Message -> Irc ()
 handleMessage msg = do
     handlers <- use botHandlers

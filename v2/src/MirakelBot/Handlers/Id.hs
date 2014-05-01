@@ -1,14 +1,12 @@
 module MirakelBot.Handlers.Id where
-import MirakelBot.Types
-import MirakelBot.Handlers
-import MirakelBot.Message.Send
-import Data.Text as T
-import           Control.Monad.Reader
+import           Control.Monad
+import           Data.Text               as T
+import           MirakelBot.Handlers
+import           MirakelBot.Message.Send
+import           MirakelBot.Types
 
 init :: Irc ()
-init = registerBangHandler (T.pack "id") handleId >>
-          return ()
+init = void $ registerBangHandler (T.pack "id") handleId
 
 handleId :: Text -> Handler
-handleId txt msg = answer txt msg
-handleId _ _ = return ()
+handleId = answer

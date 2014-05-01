@@ -1,14 +1,15 @@
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell   #-}
 module MirakelBot.Types where
+import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Control.Lens
+import           Data.Monoid
 import           Data.Text            (Text)
 import qualified Data.Text            as T
 import           Network              (PortID)
 import           System.IO
 import           System.Time
-import Data.Monoid
 
 -- | toText
 class ShowT a where
@@ -28,12 +29,12 @@ data Command    = PRIVMSG
 instance ShowT Command where
     showt (NumericCommand i) = T.pack $ show i
     showt (Command text) = text
-    showt (PRIVMSG) = T.pack  "PRIVMSG"
+    showt (PRIVMSG) = "PRIVMSG"
     showt cmd = T.pack $ show cmd
 newtype Param   = Param { getParam :: Text } deriving (Eq,Show)
 instance ShowT Param where
     showt (Param param)
-        | T.any (==' ') param = (T.pack ":") <> param
+        | T.any (==' ') param = ":" <> param
         | otherwise = param
 
 newtype Host    = Host { getHost :: Text } deriving (Show, Eq)
@@ -41,23 +42,23 @@ newtype Host    = Host { getHost :: Text } deriving (Show, Eq)
 data Prefix = ServerPrefix Text
             | NickPrefix {
                   prefixNick :: Nick
-                , prefixUser :: (Maybe User)
-                , prefixHost :: (Maybe Host)
+                , prefixUser :: Maybe User
+                , prefixHost :: Maybe Host
                 }
             deriving (Eq,Show)
 
 instance ShowT Prefix where
     showt (ServerPrefix p) = p
-    showt (NickPrefix (Nick nick) muser mhost) = nick 
-        <> (printmuser muser) 
-        <> (printmhost mhost)
+    showt (NickPrefix (Nick nick) muser mhost) = nick
+        <> printmuser muser
+        <> printmhost mhost
         where
             printmuser :: Maybe User -> Text
-            printmuser Nothing = T.pack ""
-            printmuser (Just (User user)) = (T.pack "!") <> user
+            printmuser Nothing = ""
+            printmuser (Just (User user)) = "!" <> user
             printmhost :: Maybe Host -> Text
             printmhost Nothing = T.pack ""
-            printmhost (Just (Host host)) = (T.pack "@") <> host
+            printmhost (Just (Host host)) = "@" <> host
 
 -- |<to>         ::= <channel> | <user> '@' <servername> | <nick> | <mask>
 -- |Currently we are ignoring the mask because we don't need it
@@ -88,41 +89,41 @@ data Message = ServerMessage { -- [:Prefix] Command [Param1] .. [Param15]
 makeLenses ''Message
 
 instance ShowT Message where
-    showt (ServerMessage mprefix command params) = (printmprefix mprefix)
-        <> (showt command) <> (T.pack " ") 
-        <> (T.unwords $ map showt params)
-    showt (PrivateMessage mprefix dest text) = (printmprefix mprefix) 
-        <> (T.pack " PRIVMSG ")
-        <> (T.intercalate (T.pack "T") $ map showt dest) <> (T.pack " ")
-        <> (showt $ Param text)
+    showt (ServerMessage mprefix command params) = printmprefix mprefix
+        <> showt command <> " "
+        <> T.unwords (map showt params)
+    showt (PrivateMessage mprefix dest text) = printmprefix mprefix
+        <> " PRIVMSG "
+        <> T.intercalate "T" (map showt dest) <> " "
+        <> showt (Param text)
 printmprefix :: ShowT a => Maybe a -> Text
 printmprefix Nothing = T.pack ""
-printmprefix (Just p) = (T.pack ":") <> (showt p) <> (T.pack " ")
-    
+printmprefix (Just p) = ":" <> showt p <> " "
+
 
 -- Handlers
-newtype HandlerId = HandlerId { getHandlerId :: Int } 
+newtype HandlerId = HandlerId { getHandlerId :: Int }
     deriving (Show, Eq)
 data HandlerCondition = PrefixCondition Text | InfixCondition Text
     deriving (Show, Eq)
 
 -- Main Transformer
 data BotConfig = BotConfig {
-      _botServer  :: String
-    , _botPort    :: PortID
-    , _botChan    :: Text
-    , _botNick    :: Text
+      _botServer   :: String
+    , _botPort     :: PortID
+    , _botChan     :: Text
+    , _botNick     :: Text
     , _botRealName:: Text
-    , _botHotword :: Text
+    , _botHotword  :: Text
     } deriving Show
 
 makeLenses ''BotConfig
 
 data BotEnv = BotEnv {
       _botConfig :: BotConfig
-   , _socket    :: Handle
+   , _socket     :: Handle
     , _starttime :: ClockTime
-    } 
+    }
 
 makeLenses ''BotEnv
 
@@ -136,10 +137,10 @@ runHandler :: BotEnv -> ReaderT BotEnv IO () -> IO ()
 runHandler = flip runReaderT
 
 data BotState = BotState {
-      _onlineUsers :: [User]
-    , _lastMessage :: Maybe Message
-    , _botMasters  :: [User]
-    , _botHandlers :: [(HandlerId,Handler)]
+      _onlineUsers   :: [User]
+    , _lastMessage   :: Maybe Message
+    , _botMasters    :: [User]
+    , _botHandlers   :: [(HandlerId,Handler)]
     , _lastHandlerId :: HandlerId
     }
 

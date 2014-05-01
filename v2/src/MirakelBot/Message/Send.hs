@@ -1,10 +1,10 @@
 module MirakelBot.Message.Send (send,send',answer) where
-import MirakelBot.Types
-import           Control.Monad.Reader
 import           Control.Lens
-import qualified Data.Text.Encoding as T
-import qualified Data.Text as T
+import           Control.Monad.Reader
 import qualified Data.ByteString.Char8 as BC
+import qualified Data.Text             as T
+import qualified Data.Text.Encoding    as T
+import           MirakelBot.Types
 
 send :: Message -> Irc ()
 send message = do
@@ -20,10 +20,10 @@ sendText :: T.Text -> [To] -> HandlerResult
 sendText txt dest = do
     let msg = PrivateMessage Nothing dest txt
     send' msg
-    
+
 
 getDest :: Message -> To
-getDest (PrivateMessage {_privateSender = Just sndr, _privateDestination = (dest:_)}) = 
+getDest (PrivateMessage {_privateSender = Just sndr, _privateDestination = (dest:_)}) =
     case dest of
         ToChannel _ -> dest
         ToUser _ -> sndr
@@ -35,5 +35,5 @@ send' :: Handler
 send' message = do
     h <- view socket
     liftIO $ BC.hPutStrLn h $ T.encodeUtf8 $ showt message
-    liftIO $ putStrLn $ '>' : (T.unpack $ showt message)
+    liftIO $ putStrLn $ '>' : T.unpack (showt message)
 

@@ -1,13 +1,15 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Message.Receive where
-import MirakelBot.Types
-import Control.Applicative ((<$>),(<*>), (<|>), some)
-import Data.ByteString (ByteString)
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
-import qualified Data.ByteString.Char8 as BC
-import qualified Data.Attoparsec as A
+import           Control.Applicative   (some, (<$>), (<*>), (<|>))
+import qualified Data.Attoparsec       as A
 import qualified Data.Attoparsec.Char8 as AC
-import Text.Read
+import           Data.ByteString       (ByteString)
+import qualified Data.ByteString.Char8 as BC
+import           Data.Maybe
+import qualified Data.Text             as T
+import qualified Data.Text.Encoding    as T
+import           MirakelBot.Types
+import           Text.Read
 
 isSpace  :: Char -> Bool
 isSpace ' '     = True
@@ -16,9 +18,9 @@ isSpace '\r'    = True
 isSpace _       = False
 
 decodeMessage :: ByteString -> Maybe Message
-decodeMessage rawMessage = 
+decodeMessage rawMessage =
         let msg =AC.parseOnly parseMessage rawMessage in
-        either (\_ -> Nothing) Just msg
+        either (const Nothing) Just msg
 
 {-
 <command>  ::= <letter> { <letter> } | <number> <number> <number>
@@ -70,7 +72,7 @@ parseMessage = do
         getTo (Param to) = map pTo $ T.split (== ',') to
 
         pTo to
-            | (T.pack "#") `T.isPrefixOf` to =ToChannel $ Channel to
+            | "#" `T.isPrefixOf` to =ToChannel $ Channel to
             | T.any (=='@') to = ToUser $ User to
             | otherwise = ToNick $ Nick to
 
@@ -103,9 +105,7 @@ parseCommand = do
         parseNormalCommand = do
             cmd <- some $ AC.satisfy (`elem` ['a'..'z'] ++ ['A'..'Z'])
             let mcmd = readMaybe cmd :: Maybe Command
-            return $ case mcmd of
-                Just command -> command
-                Nothing -> Command $ T.pack cmd
+            return $ fromMaybe (Command $ T.pack cmd) mcmd
         parseNumericCommand = do
             cmd <- AC.take 3
             case readMaybe $ BC.unpack cmd of
