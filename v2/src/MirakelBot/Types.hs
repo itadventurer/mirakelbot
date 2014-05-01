@@ -20,13 +20,16 @@ newtype Nick    = Nick { getNick :: Text } deriving (Show, Eq)
 newtype Mask    = Mask { getMask :: Text } deriving (Show, Eq)
 newtype Channel = Channel { getChannel :: Text } deriving (Show, Eq)
 data Command    = PRIVMSG
+                | PING
+                | PONG
                 | Command Text
                 | NumericCommand Int
-                deriving (Eq,Show)
+                deriving (Eq,Show,Read)
 instance ShowT Command where
     showt (NumericCommand i) = T.pack $ show i
     showt (Command text) = text
     showt (PRIVMSG) = T.pack  "PRIVMSG"
+    showt cmd = T.pack $ show cmd
 newtype Param   = Param { getParam :: Text } deriving (Eq,Show)
 instance ShowT Param where
     showt (Param param)
@@ -76,7 +79,7 @@ data Message = ServerMessage { -- [:Prefix] Command [Param1] .. [Param15]
               , _serverParams  :: [Param]
             } |
             PrivateMessage {
-                _privateSender      :: To
+                _privateSender      :: Maybe To
               , _privateDestination :: [To]
               , _privateMessage     :: Text
             }
@@ -88,13 +91,13 @@ instance ShowT Message where
     showt (ServerMessage mprefix command params) = (printmprefix mprefix)
         <> (showt command) <> (T.pack " ") 
         <> (T.unwords $ map showt params)
-        where 
-            printmprefix Nothing = T.pack ""
-            printmprefix (Just p) = (T.pack ":") <> (showt p) <> (T.pack " ")
-    showt (PrivateMessage mprefix dest text) = (T.pack ":") <> (showt mprefix) 
+    showt (PrivateMessage mprefix dest text) = (printmprefix mprefix) 
         <> (T.pack " PRIVMSG ")
         <> (T.intercalate (T.pack "T") $ map showt dest) <> (T.pack " ")
         <> (showt $ Param text)
+printmprefix :: ShowT a => Maybe a -> Text
+printmprefix Nothing = T.pack ""
+printmprefix (Just p) = (T.pack ":") <> (showt p) <> (T.pack " ")
     
 
 -- Handlers

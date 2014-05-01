@@ -6,10 +6,9 @@ import Data.Text as T
 import           Control.Monad.Reader
 
 init :: Irc ()
-init = registerBangHandler handleId (T.pack "id") >>
+init = registerBangHandler (T.pack "id") handleId >>
           return ()
 
-handleId :: Handler
-handleId msg@(PrivateMessage {_privateMessage = txt}) = do
-    answer txt msg
-handleId _ = return ()
+handleId :: Text -> Handler
+handleId txt msg = answer txt msg
+handleId _ _ = return ()

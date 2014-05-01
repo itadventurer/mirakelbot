@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers where
 import MirakelBot.Types
 import Control.Lens
@@ -22,19 +23,20 @@ registerHandler h = do
     botHandlers %= ((i,h) :)
     return i
 
-isPrefixOfMsg :: Text -> Message -> Bool
-isPrefixOfMsg prefix (PrivateMessage {_privateMessage = txt}) = prefix `T.isPrefixOf` txt
-isPrefixOfMsg _ _ = False
+splitMsgAt :: Int -> Message -> Maybe (Text,Text)
+splitMsgAt at (PrivateMessage {_privateMessage = txt}) = Just $ T.splitAt at txt
+splitMsgAt _ _ = Nothing
+
 
 -- | Register a new Handler which is called when the user calls a bang command
-registerBangHandler :: Handler -> Text -> Irc (HandlerId)
-registerBangHandler h rawcmd = do
+registerBangHandler :: Text -> (Text -> Handler) -> Irc (HandlerId)
+registerBangHandler rawcmd h = do
     cfg <- view botConfig
     let hotword = view botHotword cfg
     let cmd = hotword <> rawcmd
-    let newHandler = \msg ->
-                       if cmd `isPrefixOfMsg` msg then h msg
-                       else return ()
+    let newHandler = msg -> case splitMsgAt (T.length cmd) msg of
+                        Just (p,params) | p== cmd -> h params msg
+                        _ -> return ()
     i <- generateHandlerId
     botHandlers %= ((i,newHandler) :)
     return i

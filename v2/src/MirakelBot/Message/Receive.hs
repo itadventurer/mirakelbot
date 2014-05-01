@@ -59,7 +59,7 @@ parseMessage = do
     return $ toMsg prefix command params
     where
         toMsg :: Maybe Prefix -> Command -> [Param] -> Message
-        toMsg (Just prefix@(NickPrefix {})) PRIVMSG (to:params) = PrivateMessage (getSender prefix) (getTo to) $ T.unwords $ map getParam params
+        toMsg (Just prefix@(NickPrefix {})) PRIVMSG (to:params) = PrivateMessage (Just $ getSender prefix) (getTo to) $ T.unwords $ map getParam params
         toMsg p c px= ServerMessage p c px
 
         getSender :: Prefix -> To
@@ -102,9 +102,10 @@ parseCommand = do
     where
         parseNormalCommand = do
             cmd <- some $ AC.satisfy (`elem` ['a'..'z'] ++ ['A'..'Z'])
-            return $ case cmd of
-                "PRIVMSG" -> PRIVMSG
-                _ -> Command $ T.pack cmd
+            let mcmd = readMaybe cmd :: Maybe Command
+            return $ case mcmd of
+                Just command -> command
+                Nothing -> Command $ T.pack cmd
         parseNumericCommand = do
             cmd <- AC.take 3
             case readMaybe $ BC.unpack cmd of

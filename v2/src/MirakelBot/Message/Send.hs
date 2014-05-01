@@ -18,14 +18,12 @@ answer txt msg=do
 
 sendText :: T.Text -> [To] -> HandlerResult
 sendText txt to = do
-    cfg <- view botConfig 
-    let nick = view botNick cfg
-    let msg = PrivateMessage (ToNick $ Nick nick) to txt
+    let msg = PrivateMessage Nothing to txt
     send' msg
     
 
 getDest :: Message -> To
-getDest msg@(PrivateMessage {_privateSender = sndr, _privateDestination = (to:_)}) = 
+getDest msg@(PrivateMessage {_privateSender = Just sndr, _privateDestination = (to:_)}) = 
     case to of
         ToChannel _ -> to
         ToUser _ -> sndr
