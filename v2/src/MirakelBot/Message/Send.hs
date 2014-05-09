@@ -6,18 +6,18 @@ import qualified Data.Text             as T
 import qualified Data.Text.Encoding    as T
 import           MirakelBot.Types
 import           System.IO
-send :: Message -> Handler
+send :: Message -> Handler ()
 send message = do
     env <- view handlerEnv
     let h = view socket env
     liftIO $ send' h message
-answer :: T.Text -> Handler
+answer :: T.Text -> Handler ()
 answer txt=do
     msg <- view handlerMessage
     let dest = getDest msg
     sendText txt [dest]
 
-sendText :: T.Text -> [To] -> Handler
+sendText :: T.Text -> [To] -> Handler ()
 sendText txt dest = do
     let msg = PrivateMessage Nothing dest txt
     env <- view handlerEnv

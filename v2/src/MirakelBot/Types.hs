@@ -137,16 +137,16 @@ makeLenses ''HandlerInfo
 type Irc = StateT BotState (ReaderT BotEnv IO)
 
 
-type Handler = ReaderT HandlerInfo IO ()
+type Handler a = ReaderT HandlerInfo IO a
 
-runHandler :: HandlerInfo -> Handler -> IO ()
+runHandler :: HandlerInfo -> Handler () -> IO ()
 runHandler = flip runReaderT
 
 data BotState = BotState {
       _onlineUsers   :: [User]
     , _lastMessage   :: Maybe Message
     , _botMasters    :: [User]
-    , _botHandlers   :: [(HandlerId,Handler)]
+    , _botHandlers   :: [(HandlerId,Handler ())]
     , _lastHandlerId :: HandlerId
     }
 

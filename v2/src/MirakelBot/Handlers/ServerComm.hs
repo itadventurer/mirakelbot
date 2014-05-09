@@ -5,7 +5,7 @@ import           MirakelBot.Handlers
 import           MirakelBot.Message.Send
 import           MirakelBot.Types
 
-commHandler :: [Handler]
+commHandler :: [Handler ()]
 commHandler = [handlePing]
 
 init :: Irc ()
@@ -13,7 +13,7 @@ init = do
     traverse_ registerHandler commHandler
     return ()
 
-handlePing :: Handler
+handlePing :: Handler ()
 handlePing =do 
             msg <- view handlerMessage
             case msg of
