@@ -34,9 +34,10 @@ run handlers = do
     let nick = view botNick cfg
     let chan = view botChan cfg
     let real = view botRealName cfg
-    send $ ServerMessage Nothing (Command "NICK") (Param <$> [nick])
-    send $ ServerMessage Nothing (Command "USER") (Param <$> [nick, "0", "*", ":" <> real])
-    send $ ServerMessage Nothing (Command "JOIN") (Param <$> [chan])
+    h <- asks _socket
+    liftIO $ send' h $ ServerMessage Nothing (Command "NICK") (Param <$> [nick])
+    liftIO $ send' h $ ServerMessage Nothing (Command "USER") (Param <$> [nick, "0", "*", ":" <> real])
+    liftIO $ send' h $ ServerMessage Nothing (Command "JOIN") (Param <$> [chan])
     asks _socket >>= listen
 
 listen :: Handle -> Irc ()

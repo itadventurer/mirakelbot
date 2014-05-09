@@ -22,7 +22,9 @@ runBot config = withSocketsDo $ bracket (connect config) disconnect mloop
     initState  = BotState [] Nothing [] [] (HandlerId 0)
     mloop :: BotEnv -> IO ()
     mloop env    =  catch (void (runReaderT (runStateT (run miscHandlers) initState) env))
-                        (\(SomeException _) -> return ())
+                        handleException
+    handleException :: SomeException -> IO ()
+    handleException e = putStrLn $ show e
 
 main :: IO BotConfig
 main = execParser opts

@@ -128,12 +128,18 @@ data BotEnv = BotEnv {
 makeLenses ''BotEnv
 
 
+data HandlerInfo = HandlerInfo {
+      _handlerMessage :: Message
+    , _handlerEnv     :: BotEnv
+    , _handlerId      :: HandlerId
+    }
+makeLenses ''HandlerInfo
 type Irc = StateT BotState (ReaderT BotEnv IO)
 
-type Handler = (Message -> HandlerResult)
-type HandlerResult =ReaderT BotEnv IO ()
 
-runHandler :: BotEnv -> ReaderT BotEnv IO () -> IO ()
+type Handler = ReaderT HandlerInfo IO ()
+
+runHandler :: HandlerInfo -> Handler -> IO ()
 runHandler = flip runReaderT
 
 data BotState = BotState {
