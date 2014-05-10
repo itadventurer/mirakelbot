@@ -56,10 +56,8 @@ listen h = forever $ do
 
         handleError :: String -> Irc ()
         handleError err= do
-            lastMessage .= Nothing
             printError err
 
         handleSucc :: Message -> Irc ()
         handleSucc msg = do
-            lastMessage .= Just msg
             handleMessage msg

@@ -3,7 +3,6 @@ import           Control.Applicative
 import           Control.Exception
 import           Control.Lens
 import           Control.Monad.Reader
-import           Control.Monad.State
 import           Data.Monoid
 import qualified Data.Text               as T
 import           MirakelBot.InitHandlers
@@ -18,10 +17,8 @@ runBot config = withSocketsDo $ bracket (connect config) disconnect mloop
   where
     disconnect :: BotEnv -> IO ()
     disconnect = hClose . view socket
-    initState :: BotState
-    initState  = BotState [] Nothing [] [] (HandlerId 0)
     mloop :: BotEnv -> IO ()
-    mloop env    =  catch (void (runReaderT (runStateT (run miscHandlers) initState) env))
+    mloop env    =  catch (void (runReaderT (run miscHandlers) env))
                         handleException
     handleException :: SomeException -> IO ()
     handleException e = putStrLn $ show e

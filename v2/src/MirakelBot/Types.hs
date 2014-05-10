@@ -144,7 +144,7 @@ data HandlerInfo = HandlerInfo {
     , _handlerId      :: HandlerId
     }
 makeLenses ''HandlerInfo
-type Irc = StateT BotState (ReaderT BotEnv IO)
+type Irc = ReaderT BotEnv IO
 
 
 newtype Handler a = Handler { runHandler' :: ReaderT HandlerInfo IO a }
@@ -169,14 +169,3 @@ modifyUserList :: (UserList -> UserList) -> Handler ()
 modifyUserList f = Handler $ do
     ul <- view $ handlerEnv.userlist
     liftIO $ modifyMVar_ ul $ return . f
-
-data BotState = BotState {
-      _onlineUsers   :: [User]
-    , _lastMessage   :: Maybe Message
-    , _botMasters    :: [User]
-    , _botHandlers   :: [(HandlerId,Handler ())]
-    , _lastHandlerId :: HandlerId
-    }
-
-makeLenses ''BotState
-
