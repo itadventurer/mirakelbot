@@ -15,7 +15,7 @@ init = do
 
 handlePing :: Handler ()
 handlePing =do 
-            msg <- view handlerMessage
+            msg <- getMessage
             case msg of
                 ServerMessage {_serverCommand = PING, _serverParams = p} -> 
                     send msg {

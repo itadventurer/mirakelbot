@@ -12,9 +12,9 @@ import           MirakelBot.Handlers
 
 getBang :: Text -> Handler (Maybe (Text,Text))
 getBang rawcmd =do
-    hotword <- view $ handlerEnv.botConfig.botHotword
+    hotword <- view (botConfig.botHotword) <$> getBotEnv
     let cmd = hotword <> rawcmd
-    msg <- view handlerMessage
+    msg <- getMessage
     case T.splitAt (T.length cmd) <$> msg ^? privateMessage of
                         Just (p,params) | p== cmd && (T.null params || isSpace (T.head params))
                             -> return $ Just (p,params)
@@ -31,8 +31,8 @@ registerBangHandler rawcmd h = do
 
 isDirectMessage :: Handler Bool
 isDirectMessage = do
-            bnick <- view (handlerEnv.botConfig.botNick)
-            msg <- view handlerMessage
+            bnick <- view (botConfig.botNick) <$> getBotEnv
+            msg <- getMessage
             case msg ^? privateDestination of
                 Just (ToNick (Nick nick):_) | nick == bnick -> return True
                 _ -> case (bnick `T.isInfixOf`) <$> msg ^? privateMessage of
@@ -45,7 +45,7 @@ registerDirectMessageHandler h = registerHandler $ isDirectMessage >>= flip when
 
 isMentioning :: Text -> Handler Bool
 isMentioning txt = do
-    msg <- view handlerMessage
+    msg <- getMessage
     case (txt `T.isInfixOf`) <$> msg ^? privateMessage of
             Just True -> return True
             _ -> return False

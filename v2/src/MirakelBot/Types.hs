@@ -1,9 +1,10 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TemplateHaskell   #-}
 module MirakelBot.Types where
 import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State
+import           Control.Applicative
 import           Data.Monoid
 import           Data.Text            (Text)
 import qualified Data.Text            as T
@@ -137,10 +138,20 @@ makeLenses ''HandlerInfo
 type Irc = StateT BotState (ReaderT BotEnv IO)
 
 
-type Handler a = ReaderT HandlerInfo IO a
+newtype Handler a = Handler { runHandler' :: ReaderT HandlerInfo IO a }
+    deriving (Monad, Applicative, Functor, MonadIO)
 
 runHandler :: HandlerInfo -> Handler () -> IO ()
-runHandler = flip runReaderT
+runHandler i = flip runReaderT i . runHandler'
+
+getMessage :: Handler Message
+getMessage = Handler $ view handlerMessage
+
+getBotEnv :: Handler BotEnv
+getBotEnv = Handler $ view handlerEnv
+
+getOwnId :: Handler HandlerId
+getOwnId = Handler $ view handlerId
 
 data BotState = BotState {
       _onlineUsers   :: [User]

@@ -1,4 +1,5 @@
 module MirakelBot.Message.Send (send,sendText,send',answer) where
+
 import           Control.Lens
 import           Control.Monad.Reader
 import qualified Data.ByteString.Char8 as BC
@@ -6,21 +7,23 @@ import qualified Data.Text             as T
 import qualified Data.Text.Encoding    as T
 import           MirakelBot.Types
 import           System.IO
+
 send :: Message -> Handler ()
 send message = do
-    env <- view handlerEnv
+    env <- getBotEnv
     let h = view socket env
     liftIO $ send' h message
+
 answer :: T.Text -> Handler ()
 answer txt=do
-    msg <- view handlerMessage
+    msg <- getMessage
     let dest = getDest msg
     sendText txt [dest]
 
 sendText :: T.Text -> [To] -> Handler ()
 sendText txt dest = do
     let msg = PrivateMessage Nothing dest txt
-    env <- view handlerEnv
+    env <- getBotEnv
     let h = view socket env
     liftIO $ send' h msg
 
