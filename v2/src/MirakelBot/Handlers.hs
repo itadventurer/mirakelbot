@@ -48,7 +48,9 @@ registerHandler h = do
 
 -- | Removes a Handler from the Handler List
 unregisterHandler :: HandlerId -> Irc ()
-unregisterHandler hid = undefined -- botHandlers %= filter (\ (i,_) -> i /= hid)
+unregisterHandler hid = do
+    mvar <- view handlers
+    liftIO . modifyMVar_ mvar $ return . filter (\h -> fst h /= hid)
 
 -- |
 handleMessage :: Message -> Irc ()
