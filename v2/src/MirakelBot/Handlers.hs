@@ -3,13 +3,14 @@ module MirakelBot.Handlers where
 
 import           Control.Lens
 import           Control.Monad.Reader
-import           MirakelBot.Types
+import           MirakelBot.Internal
 import           Control.Applicative
 import           Data.Unique
 import           Control.Concurrent.MVar
+import Control.Concurrent
 
 
-runHandler :: HandlerInfo -> Handler () -> IO ()
+runHandler :: HandlerInfo -> Handler a -> IO a
 runHandler i = flip runReaderT i . runHandler'
 
 getMessage :: Handler Message
@@ -23,6 +24,16 @@ getOwnId = Handler $ view handlerId
 
 getUserList :: Handler UserList
 getUserList = Handler $ view (handlerEnv.userlist) >>= liftIO . readMVar 
+
+runIrc :: Irc a -> Handler a
+runIrc irc = do
+    env <- getBotEnv
+    liftIO $ runReaderT irc env
+
+forkHandler :: Handler () -> Handler ThreadId
+forkHandler h = Handler $ do
+    info <- ask
+    liftIO . forkIO $ runHandler info h
 
 modifyUserList :: (UserList -> UserList) -> Handler ()
 modifyUserList f = Handler $ do
@@ -47,9 +58,15 @@ unregisterHandler hid = do
     mvar <- view handlers
     liftIO . modifyMVar_ mvar $ return . filter (\h -> fst h /= hid)
 
+unregisterSelf :: Handler ()
+unregisterSelf = do
+    i <- getOwnId
+    runIrc $ unregisterHandler i
+
 -- |
 handleMessage :: Message -> Irc ()
 handleMessage msg = do
     env <- ask
     hs <- liftIO . readMVar $ env^.handlers
-    liftIO . forM_ hs $ \(hid, h) -> runHandler (HandlerInfo msg env hid) h
+    liftIO . forM_ hs $ \(hid, h) -> forkIO $ runHandler (HandlerInfo msg env hid) h
+
