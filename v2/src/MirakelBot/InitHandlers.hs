@@ -7,4 +7,4 @@ import           MirakelBot.Handlers.Users
 import           MirakelBot.Types
 
 miscHandlers :: [Irc ()]
-miscHandlers = [MirakelBot.Handlers.Id.init,MirakelBot.Handlers.ServerComm.init,MirakelBot.Handlers.Talk.init,MirakelBot.Handlers.Mirakel.init,MirakeBot.Handlers.Users.init]
+miscHandlers = [MirakelBot.Handlers.Id.init,MirakelBot.Handlers.ServerComm.init,MirakelBot.Handlers.Talk.init,MirakelBot.Handlers.Mirakel.init,MirakelBot.Handlers.Users.init]

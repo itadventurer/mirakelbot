@@ -21,6 +21,7 @@ class ShowT a where
 
 
 data UserMode = ModeNormal | ModeOperator
+    deriving (Show, Eq, Ord)
 
 data Command    = PRIVMSG
                 | PING
