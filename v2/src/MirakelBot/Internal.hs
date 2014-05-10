@@ -20,7 +20,7 @@ class ShowT a where
     showt :: a -> Text
 
 
-data UserMode = ModeNormal | ModeOperator
+data UserMode = ModeNormal | ModeOperator | ModeVoice
     deriving (Show, Eq, Ord)
 
 data Command    = PRIVMSG
@@ -34,7 +34,7 @@ instance ShowT Command where
     showt (Command text) = text
     showt (PRIVMSG) = "PRIVMSG"
     showt cmd = T.pack $ show cmd
-newtype Param   = Param { getParam :: Text } deriving (Eq,Show)
+newtype Param   = Param { getParam :: Text } deriving (Eq,Show, IsString)
 instance ShowT Param where
     showt (Param param)
         | T.any (==' ') param = ":" <> param

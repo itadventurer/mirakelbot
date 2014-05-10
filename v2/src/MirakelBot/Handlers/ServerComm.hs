@@ -8,9 +8,10 @@ import           MirakelBot.Types
 import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
+import Control.Applicative
 
 commHandler :: [Handler ()]
-commHandler = [handlePing]
+commHandler = [handlePing,handleNameReply]
 
 init :: Irc ()
 init = do
@@ -33,14 +34,16 @@ handleNameReply :: Handler ()
 handleNameReply = do
     msg <- getMessage
     case msg of
-        ServerMessage {_serverCommand = NumericCommand 353, _serverParams = [Param channelname, Param usernames]} -> do
+        ServerMessage {_serverCommand = NumericCommand 353, _serverParams = p} -> do
+            let [Param channelname, Param usernames] = filter ((&&) <$> (/= "+") <*> (/= "@")) $ tail p
             let channel = Channel channelname
             let users = M.fromList $ map processUser $ T.words usernames
             modifyUserList channel $ M.union users
-            sendText "GetList" [ToChannel $ Channel "#mirakelbot"]
             where
                 processUser :: Text -> (Nick, UserMode)
-                processUser user 
-                    | "@" `T.isInfixOf` user = (Nick user, ModeOperator)
-                    | otherwise = (Nick user, ModeNormal)
+                processUser user = case T.uncons user of
+                    Just ('@',u) -> (Nick u, ModeOperator)
+                    Just ('+',u) -> (Nick u, ModeVoice)
+                    Just _ -> (Nick user, ModeNormal)
+                    Nothing -> error "Empty text in processUser"
         _ -> return ()
