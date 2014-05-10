@@ -4,8 +4,3 @@
 module MirakelBot.Types (module MirakelBot.Internal) where
 
 import MirakelBot.Internal
-
-
-
-
-
