@@ -11,7 +11,7 @@ import           MirakelBot.Types
 import           MirakelBot.Handlers
 
 getBang :: Text -> Handler (Maybe (Text,Text))
-getBang rawcmd =do
+getBang rawcmd = do
     hotword <- view (botConfig.botHotword) <$> getBotEnv
     let cmd = hotword <> rawcmd
     msg <- getMessage
@@ -52,3 +52,10 @@ isMentioning txt = do
 
 registerMentioningHandler :: Text -> Handler () -> Irc HandlerId
 registerMentioningHandler txt h = registerHandler $ isMentioning txt >>= flip when h
+
+getCurrentChannel :: Handler Channel
+getCurrentChannel = do
+    msg <- getMessage
+    let toChannel (ToChannel c) = Just c
+        toChannel _ = Nothing
+    maybe mzero return $ (msg ^? privateDestination._head) >>= toChannel

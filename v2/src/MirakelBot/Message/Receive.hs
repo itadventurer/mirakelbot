@@ -64,8 +64,8 @@ parseMessage = do
         toMsg (Just prefix@(NickPrefix {})) PRIVMSG (to:params) = PrivateMessage (Just $ getSender prefix) (getTo to) $ T.unwords $ map getParam params
         toMsg p c px= ServerMessage p c px
 
-        getSender :: Prefix -> To
-        getSender (NickPrefix  {prefixNick = nick}) = ToNick nick
+        getSender :: Prefix -> Nick
+        getSender (NickPrefix  {prefixNick = nick}) = nick
         getSender _ = error "This could not happen"
 
         getTo :: Param -> [To]

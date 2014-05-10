@@ -83,6 +83,9 @@ newtype Nick    = Nick { getNick :: Text } deriving (Show, Eq, Ord)
 newtype Mask    = Mask { getMask :: Text } deriving (Show, Eq)
 newtype Channel = Channel { getChannel :: Text } deriving (Show, Eq, Ord)
 
+instance ShowT Nick where
+    showt (Nick nick) = nick
+
 -- |<message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
 data Message = ServerMessage { -- [:Prefix] Command [Param1] .. [Param15]
                 _serverPrefix  :: Maybe Prefix
@@ -90,7 +93,7 @@ data Message = ServerMessage { -- [:Prefix] Command [Param1] .. [Param15]
               , _serverParams  :: [Param]
             } |
             PrivateMessage {
-                _privateSender      :: Maybe To
+                _privateSender      :: Maybe Nick
               , _privateDestination :: [To]
               , _privateMessage     :: Text
             }

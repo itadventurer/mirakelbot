@@ -33,8 +33,7 @@ getDest :: Message -> To
 getDest (PrivateMessage {_privateSender = Just sndr, _privateDestination = (dest:_)}) =
     case dest of
         ToChannel _ -> dest
-        ToUser _ -> sndr
-        ToNick _ -> sndr
+        _ -> ToNick sndr
         --_ -> error "Wrong destination"
 getDest _ = error "Wrong destination"
 
