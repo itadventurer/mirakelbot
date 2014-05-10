@@ -14,6 +14,7 @@ import           System.Time
 import Network (PortID)
 import Data.Unique
 import Control.Applicative
+import Data.String
 
 -- | toText
 class ShowT a where

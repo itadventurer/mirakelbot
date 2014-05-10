@@ -18,7 +18,6 @@ init = void $ registerBangHandler (T.pack "users") $ \_ -> do
     let toChannel x = case x of ToChannel c -> Just c; _ -> Nothing
 
     let mdest = msg ^? privateDestination
-    forM_ mdest $ \dest ->
-        forM_ (catMaybes $ map toChannel dest) $ \c -> do
-            users <- getUserList c
-            answer (T.pack $ show users)
+    forM_ (maybeToList mdest >>= catMaybes . map toChannel) $ \c -> do
+        users <- getUserList c
+        answer (T.pack $ show users)
