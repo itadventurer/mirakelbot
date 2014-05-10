@@ -3,7 +3,6 @@ module MirakelBot.Handlers where
 
 import           Control.Lens
 import           Control.Monad.Reader
-import           Data.Foldable
 import           MirakelBot.Types
 import           Control.Applicative
 import           Data.Unique
@@ -41,10 +40,6 @@ registerHandler h = do
     mvar <- view handlers
     liftIO . modifyMVar_ mvar $ return . ((i,h) :)
     return i
-{- do
-    i <- generateHandlerId
-    -- botHandlers %= ((i,h) :)
-    return i -}
 
 -- | Removes a Handler from the Handler List
 unregisterHandler :: HandlerId -> Irc ()
@@ -54,8 +49,7 @@ unregisterHandler hid = do
 
 -- |
 handleMessage :: Message -> Irc ()
-handleMessage msg = undefined {-do
-    handlers <- use botHandlers
+handleMessage msg = do
     env <- ask
-    liftIO $ for_ handlers $ \(hid,h) -> runHandler (HandlerInfo msg env hid) h
-    return ()-}
+    hs <- liftIO . readMVar $ env^.handlers
+    liftIO . forM_ hs $ \(hid, h) -> runHandler (HandlerInfo msg env hid) h
