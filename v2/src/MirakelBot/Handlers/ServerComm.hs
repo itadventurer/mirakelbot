@@ -9,9 +9,10 @@ import qualified Data.Map as M
 import Data.Text (Text)
 import qualified Data.Text as T
 import Control.Applicative
+import Data.Maybe
 
 commHandler :: [Handler ()]
-commHandler = [handlePing,handleNameReply]
+commHandler = [handlePing,handleNameReply,handleUserEvent]
 
 init :: Irc ()
 init = do
@@ -47,3 +48,39 @@ handleNameReply = do
                     Just _ -> (Nick user, ModeNormal)
                     Nothing -> error "Empty text in processUser"
         _ -> return ()
+
+handleUserEvent :: Handler ()
+handleUserEvent = do
+    msg <- getMessage
+    case msg of
+        ServerMessage {_serverCommand = cmd
+                      , _serverParams = p
+                      , _serverPrefix = Just (NickPrefix {prefixNick=nick})} -> do
+            let channels = mapMaybe toChannel p
+            for_ channels $ \channel -> do
+                currentMode <- getUserMode channel nick
+                case cmd of
+                    JOIN -> addUser channel nick ModeNormal
+                    PART -> delUser channel nick
+                    MODE -> addUser channel nick $ getMode p currentMode
+                    _ -> return ()
+            where
+                getMode :: [Param] -> Maybe UserMode -> UserMode
+                getMode p cmode = 
+                    let currentMode = fromMaybe ModeNormal cmode
+                        pop = headMaybe $ filter ("+" `T.isPrefixOf`) $ map getParam p
+                        nop = headMaybe $ filter ("-" `T.isPrefixOf`) $ map getParam p
+                    in case nop of
+                        Just op -> if "o" `T.isInfixOf` op then ModeNormal else currentMode
+                        Nothing -> case pop of
+                            Just op -> if "o" `T.isInfixOf` op then ModeOperator else currentMode
+                            _ -> currentMode
+                headMaybe [] = Nothing
+                headMaybe (x:_) = Just x
+        _ -> return ()
+
+
+toChannel :: Param -> Maybe Channel
+toChannel (Param channel) = if "#" `T.isPrefixOf` channel 
+    then Just $ Channel channel 
+    else Nothing

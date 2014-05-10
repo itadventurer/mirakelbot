@@ -47,6 +47,17 @@ modifyUserList channel f = Handler $ do
     where
         modList Nothing = Just $ f M.empty
         modList (Just a) = Just $ f a
+
+addUser :: Channel -> Nick -> UserMode -> Handler ()
+addUser channel user mode = modifyUserList channel $ M.insert user mode
+
+delUser :: Channel -> Nick -> Handler ()
+delUser channel user = modifyUserList channel $ M.delete user
+
+getUserMode :: Channel -> Nick -> Handler (Maybe UserMode)
+getUserMode channel nick = do
+    ul <- getUserList channel
+    return $ M.lookup nick ul
         
 
 -- | Generates new unique HandelrId

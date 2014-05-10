@@ -21,11 +21,18 @@ class ShowT a where
     showt :: a -> Text
 
 
-data UserMode = ModeNormal | ModeOperator | ModeVoice
+data UserMode = ModeNormal | ModeVoice | ModeOperator 
     deriving (Show, Eq, Ord)
+instance ShowT UserMode where
+    showt ModeNormal = ""
+    showt ModeOperator = "@"
+    showt ModeVoice = "+"
 
 data Command    = PRIVMSG
                 | PING
+                | JOIN
+                | MODE
+                | PART
                 | PONG
                 | Command Text
                 | NumericCommand Int
