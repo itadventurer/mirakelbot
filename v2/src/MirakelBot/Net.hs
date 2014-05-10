@@ -1,12 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Net where
+
 import           Control.Applicative
+import           Control.Concurrent.MVar
 import           Control.Exception
 import           Control.Lens
 import           Control.Monad.Reader
 import           Data.Attoparsec            (parseOnly)
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Char8      as BC
+import qualified Data.Map                   as M
 import           Data.Monoid
 import           MirakelBot.Handlers
 import           MirakelBot.Message.Receive
@@ -16,12 +19,14 @@ import           Network
 import           System.IO
 import           System.Time
 import           Text.Printf
+
 connect :: BotConfig -> IO BotEnv
 connect config = notify $ do
         startTime <- getClockTime
         h <- connectTo (view botServer config) (view botPort config)
+        muserlist <- newMVar M.empty
         hSetBuffering h NoBuffering
-        return (BotEnv config h startTime)
+        return (BotEnv config h startTime muserlist)
     where
         notify = bracket_
             (printf "Connecting to %s ... " (view botServer config) >> hFlush stdout)

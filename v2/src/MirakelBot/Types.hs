@@ -1,14 +1,18 @@
-{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TemplateHaskell   #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
 module MirakelBot.Types where
+
+import           Control.Applicative
+import           Control.Concurrent.MVar
 import           Control.Lens
 import           Control.Monad.Reader
 import           Control.Monad.State
-import           Control.Applicative
+import qualified Data.Map                as M
 import           Data.Monoid
-import           Data.Text            (Text)
-import qualified Data.Text            as T
-import           Network              (PortID)
+import           Data.Text               (Text)
+import qualified Data.Text               as T
+import           Network                 (PortID)
 import           System.IO
 import           System.Time
 
@@ -21,6 +25,9 @@ newtype User    = User { getUser :: Text } deriving (Show, Eq)
 newtype Nick    = Nick { getNick :: Text } deriving (Show, Eq)
 newtype Mask    = Mask { getMask :: Text } deriving (Show, Eq)
 newtype Channel = Channel { getChannel :: Text } deriving (Show, Eq)
+
+data UserMode = ModeNormal | ModeOperator
+
 data Command    = PRIVMSG
                 | PING
                 | PONG
@@ -120,10 +127,12 @@ data BotConfig = BotConfig {
 
 makeLenses ''BotConfig
 
+type UserList = M.Map Nick UserMode
 data BotEnv = BotEnv {
       _botConfig :: BotConfig
-   , _socket     :: Handle
+    , _socket    :: Handle
     , _starttime :: ClockTime
+    , _userlist  :: MVar UserList
     }
 
 makeLenses ''BotEnv
@@ -152,6 +161,14 @@ getBotEnv = Handler $ view handlerEnv
 
 getOwnId :: Handler HandlerId
 getOwnId = Handler $ view handlerId
+
+getUserList :: Handler UserList
+getUserList = Handler $ view (handlerEnv.userlist) >>= liftIO . readMVar 
+
+modifyUserList :: (UserList -> UserList) -> Handler ()
+modifyUserList f = Handler $ do
+    ul <- view $ handlerEnv.userlist
+    liftIO $ modifyMVar_ ul $ return . f
 
 data BotState = BotState {
       _onlineUsers   :: [User]
