@@ -43,7 +43,10 @@ forkHandler h = Handler $ do
 modifyUserList :: Channel -> (UserList -> UserList) -> Handler ()
 modifyUserList channel f = Handler $ do
     ul <- view $ handlerEnv.userlist
-    liftIO $ modifyMVar_ ul $ return . M.adjust f channel
+    liftIO $ modifyMVar_ ul $ return . M.alter modList channel
+    where
+        modList Nothing = Just $ f M.empty
+        modList (Just a) = Just $ f a
         
 
 -- | Generates new unique HandelrId
