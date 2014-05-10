@@ -76,9 +76,9 @@ instance ShowT To where
 
 -- Message stuff
 newtype User    = User { getUser :: Text } deriving (Show, Eq)
-newtype Nick    = Nick { getNick :: Text } deriving (Show, Eq)
+newtype Nick    = Nick { getNick :: Text } deriving (Show, Eq, Ord)
 newtype Mask    = Mask { getMask :: Text } deriving (Show, Eq)
-newtype Channel = Channel { getChannel :: Text } deriving (Show, Eq)
+newtype Channel = Channel { getChannel :: Text } deriving (Show, Eq, Ord)
 
 -- |<message>  ::= [':' <prefix> <SPACE> ] <command> <params> <crlf>
 data Message = ServerMessage { -- [:Prefix] Command [Param1] .. [Param15]
@@ -125,7 +125,7 @@ data BotEnv = BotEnv {
       _botConfig :: BotConfig
     , _socket    :: Handle
     , _starttime :: ClockTime
-    , _userlist  :: MVar UserList
+    , _userlist  :: MVar (M.Map Channel UserList)
     , _handlers  :: MVar [(HandlerId, Handler ())]
     }
 

@@ -7,6 +7,8 @@ import           MirakelBot.Types
 import           Control.Applicative
 import           Data.Unique
 import           Control.Concurrent.MVar
+import Data.Maybe
+import qualified Data.Map as M
 
 
 runHandler :: HandlerInfo -> Handler () -> IO ()
@@ -21,13 +23,17 @@ getBotEnv = Handler $ view handlerEnv
 getOwnId :: Handler HandlerId
 getOwnId = Handler $ view handlerId
 
-getUserList :: Handler UserList
-getUserList = Handler $ view (handlerEnv.userlist) >>= liftIO . readMVar 
+getUserList :: Channel -> Handler UserList
+getUserList channel = Handler $ do 
+    mv <- view (handlerEnv.userlist)
+    ul <- liftIO $ readMVar mv
+    return $ fromMaybe M.empty (M.lookup channel ul)
 
-modifyUserList :: (UserList -> UserList) -> Handler ()
-modifyUserList f = Handler $ do
+modifyUserList :: Channel -> (UserList -> UserList) -> Handler ()
+modifyUserList channel f = Handler $ do
     ul <- view $ handlerEnv.userlist
-    liftIO $ modifyMVar_ ul $ return . f
+    liftIO $ modifyMVar_ ul $ return . M.adjust f channel
+        
 
 -- | Generates new unique HandelrId
 generateHandlerId :: Irc HandlerId
