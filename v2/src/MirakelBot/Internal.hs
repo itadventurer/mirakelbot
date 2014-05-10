@@ -4,6 +4,7 @@ module MirakelBot.Internal where
 import           Control.Concurrent.MVar
 import           Control.Lens
 import           Control.Monad.Reader
+import Control.Monad.Trans.Maybe
 import qualified Data.Map                as M
 import           Data.Monoid
 import           Data.Text               (Text)
@@ -135,8 +136,8 @@ type Irc = ReaderT BotEnv IO
 newtype HandlerId = HandlerId Unique
     deriving (Eq, Ord)
 
-newtype Handler a = Handler { runHandler' :: ReaderT HandlerInfo IO a }
-    deriving (Monad, Applicative, Functor, MonadIO)
+newtype Handler a = Handler { runHandler' :: MaybeT (ReaderT HandlerInfo IO) a }
+    deriving (Monad, Applicative, Functor, MonadIO, Alternative, MonadPlus)
 
 -- Handlers
 data HandlerInfo = HandlerInfo {

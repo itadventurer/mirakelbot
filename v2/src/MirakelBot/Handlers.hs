@@ -10,9 +10,10 @@ import           Control.Concurrent.MVar
 import Control.Concurrent
 import Data.Maybe
 import qualified Data.Map as M
+import Control.Monad.Trans.Maybe
 
-runHandler :: HandlerInfo -> Handler a -> IO a
-runHandler i = flip runReaderT i . runHandler'
+runHandler :: HandlerInfo -> Handler a -> IO (Maybe a)
+runHandler i = flip runReaderT i . runMaybeT . runHandler'
 
 getMessage :: Handler Message
 getMessage = Handler $ view handlerMessage
@@ -37,7 +38,7 @@ runIrc irc = do
 forkHandler :: Handler () -> Handler ThreadId
 forkHandler h = Handler $ do
     info <- ask
-    liftIO . forkIO $ runHandler info h
+    liftIO . forkIO . void $ runHandler info h
 
 modifyUserList :: Channel -> (UserList -> UserList) -> Handler ()
 modifyUserList channel f = Handler $ do
@@ -73,5 +74,5 @@ handleMessage :: Message -> Irc ()
 handleMessage msg = do
     env <- ask
     hs <- liftIO . readMVar $ env^.handlers
-    liftIO . forM_ hs $ \(hid, h) -> forkIO $ runHandler (HandlerInfo msg env hid) h
+    liftIO . forM_ hs $ \(hid, h) -> forkIO . void $ runHandler (HandlerInfo msg env hid) h
 

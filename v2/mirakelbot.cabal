@@ -73,6 +73,7 @@ executable mirakelbot
                        , bytestring >= 0.10.4.0 && < 0.11
                        , time
                        , containers >= 0.5.5.1 && < 0.6
+                       , transformers >= 0.3.0.0 && < 0.4
   
   -- Directories containing source files.
   hs-source-dirs:      src
