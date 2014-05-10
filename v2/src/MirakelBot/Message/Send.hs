@@ -6,6 +6,7 @@ import qualified Data.ByteString.Char8 as BC
 import qualified Data.Text             as T
 import qualified Data.Text.Encoding    as T
 import           MirakelBot.Types
+import           MirakelBot.Handlers
 import           System.IO
 
 send :: Message -> Handler ()

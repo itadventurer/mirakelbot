@@ -26,15 +26,16 @@ connect config = notify $ do
         h <- connectTo (view botServer config) (view botPort config)
         muserlist <- newMVar M.empty
         hSetBuffering h NoBuffering
-        return (BotEnv config h startTime muserlist)
+        mhandlers <- newMVar []
+        return (BotEnv config h startTime muserlist mhandlers)
     where
         notify = bracket_
             (printf "Connecting to %s ... " (view botServer config) >> hFlush stdout)
             (putStrLn "done.")
 
 run :: [Irc ()] -> Irc ()
-run handlers = do
-    sequence_ handlers
+run actions = do
+    sequence_ actions
     cfg <- view botConfig
     let nick = view botNick cfg
     let chan = view botChan cfg

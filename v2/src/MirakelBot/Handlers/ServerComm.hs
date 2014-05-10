@@ -1,5 +1,5 @@
 module MirakelBot.Handlers.ServerComm where
-import           Control.Lens
+
 import           Data.Foldable
 import           MirakelBot.Handlers
 import           MirakelBot.Message.Send

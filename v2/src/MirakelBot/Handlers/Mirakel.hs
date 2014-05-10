@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | Talk with the bot
 module MirakelBot.Handlers.Mirakel where
+
 import           MirakelBot.HandlerHelpers
 import           MirakelBot.Message.Send
 import           MirakelBot.Types
@@ -8,6 +9,7 @@ import Data.Time.Clock
 import Control.Concurrent.MVar
 import Control.Monad.Reader
 import qualified Data.Text as T
+
 init :: Irc ()
 init = do
     ntime <- liftIO getCurrentTime

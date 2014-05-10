@@ -1,21 +1,47 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TemplateHaskell, OverloadedStrings, GeneralizedNewtypeDeriving #-}
 module MirakelBot.Handlers where
+
 import           Control.Lens
 import           Control.Monad.Reader
 import           Data.Foldable
 import           MirakelBot.Types
+import           Control.Applicative
+import           Data.Unique
+import           Control.Concurrent.MVar
 
--- | add one to the HandlerId
-succHandlerId :: HandlerId -> HandlerId
-succHandlerId (HandlerId i) = HandlerId $ 1+i
+
+runHandler :: HandlerInfo -> Handler () -> IO ()
+runHandler i = flip runReaderT i . runHandler'
+
+getMessage :: Handler Message
+getMessage = Handler $ view handlerMessage
+
+getBotEnv :: Handler BotEnv
+getBotEnv = Handler $ view handlerEnv
+
+getOwnId :: Handler HandlerId
+getOwnId = Handler $ view handlerId
+
+getUserList :: Handler UserList
+getUserList = Handler $ view (handlerEnv.userlist) >>= liftIO . readMVar 
+
+modifyUserList :: (UserList -> UserList) -> Handler ()
+modifyUserList f = Handler $ do
+    ul <- view $ handlerEnv.userlist
+    liftIO $ modifyMVar_ ul $ return . f
 
 -- | Generates new unique HandelrId
 generateHandlerId :: Irc HandlerId
-generateHandlerId = undefined -- lastHandlerId <%= succHandlerId
+generateHandlerId = HandlerId <$> liftIO newUnique
 
 -- | Add a Handler to the Handler list
 registerHandler :: Handler () -> Irc HandlerId
-registerHandler h = undefined {- do
+registerHandler h = do
+    i <- generateHandlerId
+    mvar <- view handlers
+    liftIO . modifyMVar_ mvar $ return . ((i,h) :)
+    return i
+{- do
     i <- generateHandlerId
     -- botHandlers %= ((i,h) :)
     return i -}
