@@ -58,6 +58,9 @@ getUserMode :: Channel -> Nick -> Handler (Maybe UserMode)
 getUserMode channel nick = do
     ul <- getUserList channel
     return $ M.lookup nick ul
+
+userIsOnline :: Channel -> Nick -> Handler Bool
+userIsOnline channel nick = isJust <$> getUserMode channel nick
         
 
 -- | Generates new unique HandelrId
