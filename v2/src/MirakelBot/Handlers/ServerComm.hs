@@ -10,6 +10,8 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Control.Applicative
 import Data.Maybe
+import Control.Monad
+import Data.List
 
 commHandler :: [Handler ()]
 commHandler = [handlePing,handleNameReply,handleUserEvent]
@@ -36,7 +38,7 @@ handleNameReply = do
     msg <- getMessage
     case msg of
         ServerMessage {_serverCommand = NumericCommand 353, _serverParams = p} -> do
-            let [Param channelname, Param usernames] = filter ((&&) <$> (/= "+") <*> (/= "@")) $ tail p
+            let [Param channelname, Param usernames] = [last $ Prelude.init p,last p]
             let channel = Channel channelname
             let users = M.fromList $ map processUser $ T.words usernames
             modifyUserList channel $ M.union users
@@ -57,24 +59,25 @@ handleUserEvent = do
                       , _serverParams = p
                       , _serverPrefix = Just (NickPrefix {prefixNick=nick})} -> do
             let channels = mapMaybe toChannel p
-            for_ channels $ \channel -> do
-                currentMode <- getUserMode channel nick
+            for_ channels $ \channel ->
                 case cmd of
                     JOIN -> addUser channel nick ModeNormal
                     PART -> delUser channel nick
-                    MODE -> addUser channel nick $ getMode p currentMode
+                    MODE -> do
+                        let newMode = getMode p
+                        unless (isNothing newMode) $ uncurry (addUser channel) $ fromJust newMode
+                        return ()
                     _ -> return ()
             where
-                getMode :: [Param] -> Maybe UserMode -> UserMode
-                getMode p cmode = 
-                    let currentMode = fromMaybe ModeNormal cmode
-                        pop = headMaybe $ filter ("+" `T.isPrefixOf`) $ map getParam p
-                        nop = headMaybe $ filter ("-" `T.isPrefixOf`) $ map getParam p
-                    in case nop of
-                        Just op -> if "o" `T.isInfixOf` op then ModeNormal else currentMode
-                        Nothing -> case pop of
-                            Just op -> if "o" `T.isInfixOf` op then ModeOperator else currentMode
-                            _ -> currentMode
+                getMode :: [Param] -> Maybe (Nick,UserMode)
+                getMode params = 
+                    let (modes,users) = partition ((||) <$> ("+" `T.isPrefixOf`) <*> ("-" `T.isPrefixOf`)) $ map getParam $ tail params
+                        user = Nick $ head users
+                    in case join $ T.uncons <$> headMaybe modes of
+                        Just ('-',op) -> setMode user ModeNormal op
+                        Just ('+',op) -> setMode user ModeOperator op
+                        _ -> Nothing
+                setMode user mode op = if "o" `T.isInfixOf` op then Just (user,mode) else Nothing
                 headMaybe [] = Nothing
                 headMaybe (x:_) = Just x
         _ -> return ()
