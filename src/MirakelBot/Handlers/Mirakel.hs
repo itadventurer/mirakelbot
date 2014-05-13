@@ -32,7 +32,7 @@ handleMentioning var = do
     liftIO $ modifyMVar_ var $ \_ -> return currentTime
     channel <- getCurrentChannel
     onlineUsers <- filterM (userIsOnline channel) masters
-    when (diffUTCTime currentTime lastMentioning > fromIntegral (10 :: Int)) $
+    when (diffUTCTime currentTime lastMentioning > fromIntegral (60*5 :: Int)) $
         if null onlineUsers then
             answer "I am the MirakelBot. My developers are currently offline. If your problem persist please write us an email to mirakel@azapps.de or join the #mirakel channel"
         else
@@ -42,3 +42,6 @@ handleLastM :: MVar UTCTime -> T.Text -> Handler ()
 handleLastM var _ = do
     ntime <- liftIO $ readMVar var
     answer (T.pack $ show ntime)
+
+getFAQ :: Handler ()
+getFAQ = undefined
