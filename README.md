@@ -2,9 +2,29 @@
 
 This is a tiny IRC bot written in Haskell to learn this wonderful language ;)
 
-It is just a small project to learn haskell. If you want to use it in a production environment consider to use [Lambdabot](http://www.haskell.org/haskellwiki/Lambdabot)
+Inspired by [https://github.com/jaspervdj/number-six](number-six)
 
-It is based on http://www.haskell.org/haskellwiki/Roll_your_own_IRC_bot but is highly modified.
+# How to use
+
+## Installation
+
+```sh
+$ cabal sandbox init
+$ cabal install
+```
+## GHCI
+
+```sh
+$ cabal repl
+```
+
+```haskel
+let cfg = BotConfig "irc.freenode.net" (PortNumber 6667) (T.pack "#mychannel") (T.pack "mynickname") (T.pack "myRealName") (T.pack "!")
+runBot cfg
+```
+
+## Stand alone
+There will be soon a standalone version of the bot
 
 # License
 
