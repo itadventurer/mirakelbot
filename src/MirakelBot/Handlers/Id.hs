@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers.Id where
 import           Control.Monad
-import           Data.Text               as T
+import           Data.Text                 as T
 import           MirakelBot.HandlerHelpers
 import           MirakelBot.Message.Send
 import           MirakelBot.Types

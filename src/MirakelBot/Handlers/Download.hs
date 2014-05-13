@@ -1,15 +1,15 @@
 module MirakelBot.Handlers.Download where
 
-import Data.Maybe
-import Data.Tree.NTree.TypeDefs
+import           Data.Maybe
+import           Data.Tree.NTree.TypeDefs
 
-import Text.XML.HXT.Core
+import           Text.XML.HXT.Core
 
-import Control.Monad.Trans
-import Control.Monad.Trans.Maybe
+import           Control.Monad.Trans
+import           Control.Monad.Trans.Maybe
 
-import Network.URI
-import Network.HTTP
+import           Network.HTTP
+import           Network.URI
 
 openUrl :: String -> MaybeT IO String
 openUrl url = case parseURI url of

@@ -1,11 +1,11 @@
 module MirakelBot.InitHandlers where
-import           MirakelBot.Handlers.Id
-import           MirakelBot.Handlers.ServerComm
-import           MirakelBot.Handlers.Talk
-import           MirakelBot.Handlers.Mirakel
-import           MirakelBot.Handlers.Users
 import           MirakelBot.Handlers.Fun
 import           MirakelBot.Handlers.Help
+import           MirakelBot.Handlers.Id
+import           MirakelBot.Handlers.Mirakel
+import           MirakelBot.Handlers.ServerComm
+import           MirakelBot.Handlers.Talk
+import           MirakelBot.Handlers.Users
 import           MirakelBot.Types
 
 miscHandlers :: [Irc ()]

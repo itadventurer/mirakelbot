@@ -1,17 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers.ServerComm where
 
+import           Control.Applicative
+import           Control.Monad
 import           Data.Foldable
+import           Data.List
+import qualified Data.Map                as M
+import           Data.Maybe
+import           Data.Text               (Text)
+import qualified Data.Text               as T
 import           MirakelBot.Handlers
 import           MirakelBot.Message.Send
 import           MirakelBot.Types
-import qualified Data.Map as M
-import Data.Text (Text)
-import qualified Data.Text as T
-import Control.Applicative
-import Data.Maybe
-import Control.Monad
-import Data.List
 
 commHandler :: [Handler ()]
 commHandler = [handlePing,handleNameReply,handleUserEvent]
@@ -22,10 +22,10 @@ init = do
     return ()
 
 handlePing :: Handler ()
-handlePing =do 
+handlePing =do
             msg <- getMessage
             case msg of
-                ServerMessage {_serverCommand = PING, _serverParams = p} -> 
+                ServerMessage {_serverCommand = PING, _serverParams = p} ->
                     send msg {
                           _serverPrefix = Nothing
                         , _serverCommand = PONG
@@ -70,7 +70,7 @@ handleUserEvent = do
                     _ -> return ()
             where
                 getMode :: [Param] -> Maybe (Nick,UserMode)
-                getMode params = 
+                getMode params =
                     let (modes,users) = partition ((||) <$> ("+" `T.isPrefixOf`) <*> ("-" `T.isPrefixOf`)) $ map getParam $ tail params
                         user = Nick $ head users
                     in case join $ T.uncons <$> headMaybe modes of
@@ -84,6 +84,6 @@ handleUserEvent = do
 
 
 toChannel :: Param -> Maybe Channel
-toChannel (Param channel) = if "#" `T.isPrefixOf` channel 
-    then Just $ Channel channel 
+toChannel (Param channel) = if "#" `T.isPrefixOf` channel
+    then Just $ Channel channel
     else Nothing

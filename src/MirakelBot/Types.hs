@@ -3,4 +3,4 @@
 {-# LANGUAGE TemplateHaskell            #-}
 module MirakelBot.Types (module MirakelBot.Internal) where
 
-import MirakelBot.Internal
+import           MirakelBot.Internal

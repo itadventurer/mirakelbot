@@ -1,27 +1,29 @@
-{-# LANGUAGE TemplateHaskell, GeneralizedNewtypeDeriving, OverloadedStrings #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
 module MirakelBot.Internal where
 
+import           Control.Applicative
 import           Control.Concurrent.MVar
 import           Control.Lens
 import           Control.Monad.Reader
-import Control.Monad.Trans.Maybe
-import qualified Data.Map                as M
+import           Control.Monad.Trans.Maybe
+import qualified Data.Map                  as M
 import           Data.Monoid
-import           Data.Text               (Text)
-import qualified Data.Text               as T
+import           Data.String
+import           Data.Text                 (Text)
+import qualified Data.Text                 as T
+import           Data.Unique
+import           Network                   (PortID)
 import           System.IO
 import           System.Time
-import Network (PortID)
-import Data.Unique
-import Control.Applicative
-import Data.String
 
 -- | toText
 class ShowT a where
     showt :: a -> Text
 
 
-data UserMode = ModeNormal | ModeVoice | ModeOperator 
+data UserMode = ModeNormal | ModeVoice | ModeOperator
     deriving (Show, Eq, Ord)
 instance ShowT UserMode where
     showt ModeNormal = ""

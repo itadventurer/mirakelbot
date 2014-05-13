@@ -5,8 +5,8 @@ import           Control.Monad.Reader
 import qualified Data.ByteString.Char8 as BC
 import qualified Data.Text             as T
 import qualified Data.Text.Encoding    as T
-import           MirakelBot.Types
 import           MirakelBot.Handlers
+import           MirakelBot.Types
 import           System.IO
 
 send :: Message -> Handler ()
@@ -39,7 +39,7 @@ getDest _ = error "Wrong destination"
 
 
 send' :: Handle -> Message -> IO ()
-send' h message@(PrivateMessage {_privateMessage = txt}) = 
+send' h message@(PrivateMessage {_privateMessage = txt}) =
     mapM_ (\l -> sendOneLiner h message {_privateMessage = l}) $ T.lines txt
 send' h message = sendOneLiner h message
 

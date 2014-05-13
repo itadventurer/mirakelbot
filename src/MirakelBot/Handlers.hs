@@ -1,16 +1,18 @@
-{-# LANGUAGE TemplateHaskell, OverloadedStrings, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings          #-}
+{-# LANGUAGE TemplateHaskell            #-}
 module MirakelBot.Handlers where
 
+import           Control.Applicative
+import           Control.Concurrent
+import           Control.Concurrent.MVar
 import           Control.Lens
 import           Control.Monad.Reader
-import           MirakelBot.Internal
-import           Control.Applicative
+import           Control.Monad.Trans.Maybe
+import qualified Data.Map                  as M
+import           Data.Maybe
 import           Data.Unique
-import           Control.Concurrent.MVar
-import Control.Concurrent
-import Data.Maybe
-import qualified Data.Map as M
-import Control.Monad.Trans.Maybe
+import           MirakelBot.Internal
 
 runHandler :: HandlerInfo -> Handler a -> IO (Maybe a)
 runHandler i = flip runReaderT i . runMaybeT . runHandler'
@@ -25,7 +27,7 @@ getOwnId :: Handler HandlerId
 getOwnId = Handler $ view handlerId
 
 getUserList :: Channel -> Handler UserList
-getUserList channel = Handler $ do 
+getUserList channel = Handler $ do
     mv <- view (handlerEnv.userlist)
     ul <- liftIO $ readMVar mv
     return $ fromMaybe M.empty (M.lookup channel ul)
@@ -61,7 +63,7 @@ getUserMode channel nick = do
 
 userIsOnline :: Channel -> Nick -> Handler Bool
 userIsOnline channel nick = isJust <$> getUserMode channel nick
-        
+
 
 -- | Generates new unique HandelrId
 generateHandlerId :: Irc HandlerId

@@ -4,14 +4,14 @@ module MirakelBot.Handlers.Users where
 import           Control.Lens
 import           Control.Monad             hiding (forM_)
 import           Data.Foldable
+import qualified Data.Map                  as M
 import           Data.Maybe
+import           Data.Monoid
 import qualified Data.Text                 as T
 import           MirakelBot.HandlerHelpers
 import           MirakelBot.Handlers
 import           MirakelBot.Message.Send
 import           MirakelBot.Types
-import Data.Monoid
-import qualified Data.Map as M
 
 init :: Irc ()
 init = void $ registerBangHandlerWithHelp "users" "show all online users" $ \_ -> do

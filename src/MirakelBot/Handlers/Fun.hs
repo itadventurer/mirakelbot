@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers.Fun where
 
+import           Control.Lens
 import           Control.Monad
-import qualified Data.Text               as T
+import qualified Data.Map                  as M
+import qualified Data.Text                 as T
 import           MirakelBot.HandlerHelpers
+import           MirakelBot.Handlers
 import           MirakelBot.Message.Send
 import           MirakelBot.Types
-import           MirakelBot.Handlers
-import Control.Lens
-import qualified Data.Map as M
 
 init :: Irc ()
 init = void . registerBangHandlerWithHelp "parrot" "Parrot a user" $ \user -> do
@@ -16,7 +16,7 @@ init = void . registerBangHandlerWithHelp "parrot" "Parrot a user" $ \user -> do
     ul <- getUserList c
     let nick = Nick user
     guard $ nick `M.member` ul
-    
+
     i <- runIrc . registerHandler $ do
         msg <- getMessage
         guard $ msg ^? privateSender._Just == Just nick

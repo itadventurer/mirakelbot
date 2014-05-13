@@ -1,16 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.HandlerHelpers where
+import           Control.Concurrent
 import           Control.Lens
 import           Control.Monad.Reader
 import           Data.Char
 import           Data.Functor
+import qualified Data.Map             as M
 import           Data.Monoid
 import           Data.Text            (Text)
 import qualified Data.Text            as T
-import           MirakelBot.Types
 import           MirakelBot.Handlers
-import Control.Concurrent
-import qualified Data.Map as M
+import           MirakelBot.Types
 
 getBang :: Text -> Handler (Maybe (Text,Text))
 getBang rawcmd = do

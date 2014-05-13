@@ -1,21 +1,21 @@
+{-# LANGUAGE Arrows            #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Arrows #-}
 -- | Talk with the bot
 module MirakelBot.Handlers.Mirakel where
 
+import           Control.Concurrent.MVar
+import           Control.Monad.Reader
+import           Data.Foldable
+import           Data.Monoid
+import qualified Data.Text                    as T
+import           Data.Time.Clock
 import           MirakelBot.HandlerHelpers
 import           MirakelBot.Handlers
+import           MirakelBot.Handlers.Download
 import           MirakelBot.Message.Send
 import           MirakelBot.Types
-import Data.Time.Clock
-import Control.Concurrent.MVar
-import Control.Monad.Reader
-import qualified Data.Text as T
-import Data.Monoid
-import MirakelBot.Handlers.Download
-import Text.XML.HXT.Core hiding (when)
-import Data.Foldable
-import Text.Read
+import           Text.Read
+import           Text.XML.HXT.Core            hiding (when)
 
 masters :: [Nick]
 masters = [Nick "azapps",Nick "weiznich"]
@@ -52,18 +52,18 @@ handleLastM var _ = do
 
 handleFAQ :: FAQ -> T.Text -> Handler ()
 handleFAQ faq params =
-    case readMaybe $ T.unpack $ T.strip params of 
+    case readMaybe $ T.unpack $ T.strip params of
         Just a -> case (a-1) `safeGet` faq of
                 Just ans -> answer $ snd ans
                 _ -> traverse_ makeAnswer $ zip [1..] faq
         _ -> traverse_ makeAnswer $ zip [1..] faq
-    where 
+    where
         makeAnswer (num,(q,_)) = answer $ T.unwords [T.pack $ show (num :: Int) ++ ".", q]
         safeGet :: Int -> [a] -> Maybe a
         safeGet _ []     = Nothing
         safeGet 0 (x:_)  = Just x
         safeGet i (_:xs) = safeGet (i-1) xs
-    
+
 
 
 type FAQ = [(T.Text,T.Text)]
