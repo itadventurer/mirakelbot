@@ -9,6 +9,8 @@ import           Data.Text            (Text)
 import qualified Data.Text            as T
 import           MirakelBot.Types
 import           MirakelBot.Handlers
+import Control.Concurrent
+import qualified Data.Map as M
 
 getBang :: Text -> Handler (Maybe (Text,Text))
 getBang rawcmd = do
@@ -21,13 +23,33 @@ getBang rawcmd = do
                         _ -> return Nothing
 
 -- | Register a new Handler which is called when the user calls a bang command
-registerBangHandler :: Text -> (Text -> Handler ()) -> Irc HandlerId
+registerBangHandler :: Text                 -- ^ Bang command
+                    -> (Text -> Handler ()) -- ^ Handler
+                    -> Irc HandlerId        -- ^ HandlerId
 registerBangHandler rawcmd h = do
     let newHandler = do bang <- getBang rawcmd
                         case bang of
                             Just (_,params) -> h (T.strip params)
                             _ -> return ()
     registerHandler newHandler
+
+registerBangHandlerWithHelp :: Text                 -- ^ Bang command
+                            -> Text                 -- ^ Help-Text
+                            -> (Text -> Handler ()) -- ^ Handler
+                            -> Irc HandlerId        -- ^ Return
+registerBangHandlerWithHelp rawcmd helptext h = do
+    help <- view botHelp
+    liftIO $ modifyMVar_ help (\x -> return $ M.insert rawcmd helptext x)
+    registerBangHandler rawcmd h
+
+getHelp :: Handler (M.Map Text Text)
+getHelp = Handler $ do
+    mv <- view $ handlerEnv.botHelp
+    liftIO $ readMVar mv
+
+getHotword :: Handler (Text)
+getHotword = Handler $ view $ handlerEnv.botConfig.botHotword
+
 
 isDirectMessage :: Handler Bool
 isDirectMessage = do

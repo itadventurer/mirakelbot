@@ -29,7 +29,7 @@ init = do
     _ <- registerMentioningHandler "Mirakel" $ handleMentioning lastMentioning
     _ <- registerMentioningHandler "mirakel" $ handleMentioning lastMentioning
     _ <- registerBangHandler "lastm" $ handleLastM lastMentioning
-    _ <- registerBangHandler "faq" $ handleFAQ faqXml
+    _ <- registerBangHandlerWithHelp "faq" "Show the faq, \n\tparam: number – which answer should I show" $ handleFAQ faqXml
     return ()
 
 handleMentioning :: MVar UTCTime -> Handler ()

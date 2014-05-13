@@ -27,7 +27,8 @@ connect config = notify $ do
         muserlist <- newMVar M.empty
         hSetBuffering h NoBuffering
         mhandlers <- newMVar []
-        return (BotEnv config h startTime muserlist mhandlers)
+        mhelp <- newMVar M.empty
+        return (BotEnv config h startTime muserlist mhandlers mhelp)
     where
         notify = bracket_
             (printf "Connecting to %s ... " (view botServer config) >> hFlush stdout)

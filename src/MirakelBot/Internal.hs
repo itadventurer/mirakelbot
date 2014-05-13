@@ -140,6 +140,7 @@ data BotEnv = BotEnv {
     , _starttime :: ClockTime
     , _userlist  :: MVar (M.Map Channel UserList)
     , _handlers  :: MVar [(HandlerId, Handler ())]
+    , _botHelp   :: MVar (M.Map Text Text)
     }
 
 

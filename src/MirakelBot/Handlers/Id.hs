@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers.Id where
 import           Control.Monad
 import           Data.Text               as T
@@ -6,7 +7,7 @@ import           MirakelBot.Message.Send
 import           MirakelBot.Types
 
 init :: Irc ()
-init = void $ registerBangHandler (T.pack "id") handleId
+init = void $ registerBangHandlerWithHelp "id" "Returns the argument" handleId
 
 handleId :: Text -> Handler ()
 handleId = answer

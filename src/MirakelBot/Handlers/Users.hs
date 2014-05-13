@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers.Users where
 
 import           Control.Lens
@@ -13,7 +14,7 @@ import Data.Monoid
 import qualified Data.Map as M
 
 init :: Irc ()
-init = void $ registerBangHandler (T.pack "users") $ \_ -> do
+init = void $ registerBangHandlerWithHelp "users" "show all online users" $ \_ -> do
     msg <- getMessage
 
     let toChannel x = case x of ToChannel c -> Just c; _ -> Nothing

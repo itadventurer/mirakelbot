@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module MirakelBot.Handlers.Fun where
 
 import           Control.Monad
@@ -10,7 +11,7 @@ import Control.Lens
 import qualified Data.Map as M
 
 init :: Irc ()
-init = void . registerBangHandler (T.pack "parrot") $ \user -> do
+init = void . registerBangHandlerWithHelp "parrot" "Parrot a user" $ \user -> do
     c <- getCurrentChannel
     ul <- getUserList c
     let nick = Nick user
