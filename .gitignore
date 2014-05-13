@@ -6,3 +6,5 @@ foo.hs
 dist
 cabal.sandbox.config
 .cabal-sandbox/
+.dist*
+.project

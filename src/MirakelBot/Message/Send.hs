@@ -39,7 +39,12 @@ getDest _ = error "Wrong destination"
 
 
 send' :: Handle -> Message -> IO ()
-send' h message = do
-    liftIO $ BC.hPutStrLn h $ T.encodeUtf8 $ showt message
-    liftIO $ putStrLn $ '>' : T.unpack (showt message)
+send' h message@(PrivateMessage {_privateMessage = txt}) = 
+    mapM_ (\l -> sendOneLiner h message {_privateMessage = l}) $ T.lines txt
+send' h message = sendOneLiner h message
 
+sendOneLiner :: Handle -> Message -> IO ()
+sendOneLiner h message = do
+    let msgT= showt message
+    liftIO $ BC.hPutStrLn h $ T.encodeUtf8 msgT
+    liftIO $ putStrLn $ '>' : T.unpack msgT

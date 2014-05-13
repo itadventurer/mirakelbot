@@ -114,7 +114,7 @@ instance ShowT Message where
         <> T.unwords (map showt params)
     showt (PrivateMessage mprefix dest text) = printmprefix mprefix
         <> " PRIVMSG "
-        <> T.intercalate "T" (map showt dest) <> " "
+        <> T.intercalate "," (map showt dest) <> " "
         <> showt (Param text)
 printmprefix :: ShowT a => Maybe a -> Text
 printmprefix Nothing = T.pack ""
