@@ -1,4 +1,4 @@
-module MirakelBot where
+module Main where
 import           Control.Applicative
 import           Control.Exception
 import           Control.Lens
@@ -23,8 +23,8 @@ runBot config = withSocketsDo $ bracket (connect config) disconnect mloop
     handleException :: SomeException -> IO ()
     handleException e = putStrLn $ show e
 
-main :: IO BotConfig
-main = execParser opts
+main :: IO ()
+main = execParser opts >>= runBot
     where
         opts = info (helper <*> parser) mempty
         parser = BotConfig
